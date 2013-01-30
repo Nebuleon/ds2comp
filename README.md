@@ -48,85 +48,36 @@ directory containing your copy of the CATSFC source, then type
 # Installing
 
 To install the plugin to your storage card after compiling it, copy
-`catsfc.plg`, `catsfc.ini` and `catsfc.bmp` to the card's `_dstwoplug`
-directory. Then, copy the source directory's CATSFC subdirectory to the
+`ds2comp.plg`, `ds2comp.ini` and `ds2comp.bmp` to the card's `_dstwoplug`
+directory. Then, copy the source directory's DS2COMP subdirectory to the
 root of the card.
 
-# Cheats
+# Compression levels
 
-The format accepted by the "Load a cheat file" function is equivalent to the
-old format used in Mightymo's BSNES Cheat Code Pack.
+By default, the compression level is 1. However, you can adjust it in the
+Options menu.
 
-1. Download the BSNES Cheat Code Pack at
-   <http://www.mightymo.net/downloads.html>. It will be a zip archive.
-2. Open the zip file, with WinZip, WinRAR or the built-in zip extension in
-   the operating system on your computer.
-3. In the zip file, open the folder called *BSNES Cheat Code Pack*, then
-   the one called *BSNES v0.51-0.74 Cheat Code Pack*.
-4. Open your microSD card's CATSFC folder, then descend into gamecht.
-5. Drag the cheat code files from the zip archive to the card's gamecht
-   folder.
-6. In the card's gamecht directory, create two folders. Name the first one
-   *a-m* and the second one *n-z*. Drag the cheat files from the games whose
-   name starts with A to M into *a-m* and the rest into *n-z*.
+The lowest compression level appears to be 0, but there is no difference
+between 0 and 1. These two levels are the fastest, compressing data at
+1 MiB/s (more with long stretches of empty data), and they should reduce the
+size of most files by a third (1/3, 33%).
 
-This is because the directory display does not handle more than 512 files.
-
-To add cheats to the menu in a game, first load the game, then use the Cheats
-menu's "Load a cheat file" option.
-
-# Frame skipping
-
-In the Video & audio menu, the **Frame skipping** option allows you to select
-a number of frames to skip between rendered frames.
-* Setting this to 0 will show every single frame, but this will slow down the
-  game considerably, as the DSTWO would only have enough processing power to
-  emulate **and** render a few frames per second. It has enough power to
-  emulate all frames and render **some**, though.
-* Setting this to 10 will skip 10 frames and render one, but this will
-  severely desynchronise the audio. You will also find yourself unable to
-  perform actions during the correct frame with the controller.
-* Setting this to - (Keep up with the game) will make the emulator try to
-  render the game at its correct speed, dropping frames as needed (up to 8).
-
-It is recommended to start with frame skipping 4 (Show 1 frame every 5) and
-go to 3 or 2 if the game doesn't run with major slowdowns with them. If you
-don't like the slowdowns, return to frame skipping 4 or -.
-
-# Hotkeys
-
-You can set buttons to press to perform certain actions. For each action,
-there is a *global hotkey* and a *game-specific override hotkey*. You might,
-for example, want to have the R button bound to Temporary fast-forward, but
-a specific game uses R for something important. In that case, you can set the
-global hotkey to R and make an override with X for that game.
-
-Hotkeys are sent to the current game as well as to their corresponding action.
-The criterion for a hotkey is met when **at least** all of its buttons are
-held. Additional keys are sent to the game and can trigger another hotkey.
-For example, setting a hotkey to L and another to R+X, then pressing L+R+X+Y
-will trigger both and send L+R+X+Y to the game.
-
-Available actions are:
-* Go to main menu. In addition to tapping the Touch Screen to return to
-  the main menu, you can set a hotkey to do the same.
-* Temporary fast-forward. While this hotkey is held, the fast-forward option
-  will be forced on.
-* Toggle sound. Each time this hotkey is held, the sound will be disabled if
-  it's currently enabled, and vice-versa.
+The highest compression level is 9. This level is very slow, compressing data
+at 64 KiB/s (more with long stretches of empty data), and it should reduce the
+size of most files by two fifths (2/5, 40%).
 
 # The font
 
-The font used by CATSFC is now similar to the Pictochat font. To modify it,
-see `source/font/README.txt`.
+The font used by DS2Compress is now similar to the Pictochat font. To modify
+it, see `source/font/README.txt`.
 
 # Translations
 
-Translations for CATSFC may be submitted to the author(s) under many forms,
-one of which is the Github pull request. To complete a translation, you will
-need to do the following:
+Translations for DS2Compress may be submitted to the author(s) under many
+forms, one of which is the Github pull request. To complete a translation, you
+will need to do the following:
 
-* Open `CATSFC/system/language.msg`.
+* Open `DS2COMP/system/language.msg`.
 * Copy what's between `STARTENGLISH` and `ENDENGLISH` and paste it at the end
   of the file.
 * Change the tags. For example, if you want to translate to German, the tags
@@ -165,4 +116,5 @@ need to do the following:
   ```
 
 Compile again, copy the plugin and your new `language.msg` to your card
-under `CATSFC/system`, and you can now select your new language in CATSFC!
+under `DS2COMP/system`, and you can now select your new language in
+DS2Compress!
