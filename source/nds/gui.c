@@ -40,7 +40,7 @@ char	gamepak_name[MAX_PATH];
 
 // If adding a language, make sure you update the size of the array in
 // message.h too.
-char *lang[3] =
+char *lang[2] =
 	{ 
 		"English",					// 0
 		"Français",					// 1
