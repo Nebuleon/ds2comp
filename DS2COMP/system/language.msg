@@ -94,7 +94,7 @@ Options
 #MSG_MAIN_MENU_EXIT
 Quitter
 #FMT_OPTIONS_COMPRESSION_LEVEL
-Niveau de compression        %d
+Niveau de compression    %d
 #FMT_OPTIONS_LANGUAGE
 Langue                              %s
 #MSG_OPTIONS_CARD_CAPACITY
