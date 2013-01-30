@@ -68,11 +68,11 @@ enum MSG
 };
 
 enum LANGUAGE {
-	ENGLISH
-	// TODO Add French [Neb]
+	ENGLISH,
+	FRENCH
 };
 
-extern char* lang[3]; // Allocated in gui.c, needs to match the languages ^
+extern char* lang[2]; // Allocated in gui.c, needs to match the languages ^
 
 char *msg[MSG_END+1];
 char msg_data[16 * 1024];

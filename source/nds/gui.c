@@ -43,10 +43,10 @@ char	gamepak_name[MAX_PATH];
 char *lang[3] =
 	{ 
 		"English",					// 0
-		// TODO Add French [Neb]
+		"Français",					// 1
 	};
 
-char *language_options[] = { (char *) &lang[0] };
+char *language_options[] = { (char *) &lang[0], &lang[1] };
 
 /******************************************************************************
 *	Macro definition
@@ -1358,7 +1358,7 @@ u32 menu()
 				level = 1;
 			else if (level > 9)
 				level = 9;
-			while (!GzipCompress (line_buffer, level )); // retry if needed
+			while (!GzipCompress (line_buffer, level)); // retry if needed
 			ds2_setCPUclocklevel(0);
 
 			return_value = 1;
@@ -2034,11 +2034,10 @@ int load_language_msg(char *filename, u32 language)
 		strcpy(start, "STARTENGLISH");
 		strcpy(end, "ENDENGLISH");
 		break;
-	// TODO Add French [Neb]
-	// case FRENCH:
-	//	strcpy(start, "STARTFRENCH");
-	//	strcpy(end, "ENDFRENCH");
-	//	break;
+	case FRENCH:
+		strcpy(start, "STARTFRENCH");
+		strcpy(end, "ENDFRENCH");
+		break;
 	}
 	u32 cmplen = strlen(start);
 

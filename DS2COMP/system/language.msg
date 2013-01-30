@@ -15,6 +15,7 @@ ENDVERSION
 ENDCOMMENT
 
 STARTENGLISH
+
 #MSG_MAIN_MENU_COMPRESS
 Compress
 #MSG_MAIN_MENU_DECOMPRESS
@@ -81,3 +82,72 @@ Failed to completely write the destination file. Check that the storage card is 
 [B] Abort
 
 ENDENGLISH
+
+STARTFRENCH
+
+#MSG_MAIN_MENU_COMPRESS
+Compresser
+#MSG_MAIN_MENU_DECOMPRESS
+Décompresser
+#MSG_MAIN_MENU_OPTIONS
+Options
+#MSG_MAIN_MENU_EXIT
+Quitter
+#FMT_OPTIONS_COMPRESSION_LEVEL
+Niveau de compression        %d
+#FMT_OPTIONS_LANGUAGE
+Langue                              %s
+#MSG_OPTIONS_CARD_CAPACITY
+Capacité de la carte
+#MSG_OPTIONS_RESET
+Remettre les paramètres à zéro
+#MSG_OPTIONS_VERSION
+Version
+#MSG_GENERAL_OFF
+Hors fonction
+#MSG_GENERAL_ON
+En fonction
+#MSG_GENERAL_CONFIRM_WITH_A
+[A] Confirmer
+#MSG_GENERAL_CANCEL_WITH_B
+[B] Annuler
+#MSG_CHANGE_LANGUAGE
+Changement de la langue...
+#MSG_CHANGE_LANGUAGE_WAITING
+Veuillez patienter...
+#MSG_APPLICATION_NAME
+Gestionnaire de fichiers gzip DS2Compress
+#MSG_WORD_APPLICATION_VERSION
+Version
+#MSG_DIALOG_RESET
+Remettre tous les paramètres à zéro?
+#MSG_PROGRESS_RESETTING
+Veuillez patienter...
+#MSG_DIALOG_OVERWRITE_EXISTING_FILE
+Le fichier de desination existe déjà. Voulez-vous l'écraser?
+#MSG_FILE_OVERWRITE_WITH_A
+[A] Écraser
+#MSG_FILE_LEAVE_WITH_B
+[B] Garder
+#MSG_PROGRESS_COMPRESSING
+Compression...
+#MSG_PROGRESS_DECOMPRESSING
+Décompression...
+#MSG_PROGRESS_KIBIBYTE_COUNT
+%d de %d Kio
+#MSG_PROGRESS_CANCEL_WITH_B
+[B] pour annuler
+#MSG_ERROR_INPUT_FILE_READ
+Une partie du fichier source ne peut être lue. Vérifiez que la carte de stockage est bien insérée.
+#MSG_ERROR_COMPRESSED_FILE_READ
+Une partie du fichier compressé ne peut être lue. Il peut être corrompu. Vérifiez aussi que la carte de stockage est bien insérée.
+#MSG_ERROR_OUTPUT_FILE_OPEN
+Impossible de créer le fichier de destination. Soit il n'y a plus d'espace libre, le fichier est déjà un dossier, son nom est trop long ou le répertoire a plus de 512 entrées.
+#MSG_ERROR_OUTPUT_FILE_WRITE
+Impossible d'écrire complètement le fichier de destination. Vérifiez que la carte de stockage est bien insérée et qu'il y a assez d'espace libre.
+#MSG_ERROR_RETRY_WITH_A
+[A] Réessayer
+#MSG_ERROR_ABORT_WITH_B
+[B] Annuler
+
+ENDFRENCH
