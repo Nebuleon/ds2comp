@@ -23,7 +23,7 @@
 #include "ds2_types.h"
 #include "fs_api.h"
 
-#define UP_SCREEN_UPDATE_METHOD   0
+#define UP_SCREEN_UPDATE_METHOD   2
 #define DOWN_SCREEN_UPDATE_METHOD 2
 
 #ifdef __cplusplus
@@ -72,6 +72,9 @@ extern int load_language_msg(char *filename, u32 language);
 
 extern void InitMessage (void);
 extern void FiniMessage (void);
+extern void InitProgress (char *Action, char *Filename, unsigned int TotalSize);
+extern void UpdateProgress (unsigned int DoneSize);
+extern unsigned int ReadInputDuringCompression ();
 
 #ifdef __cplusplus
 }

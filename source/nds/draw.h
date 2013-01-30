@@ -133,6 +133,8 @@ extern struct gui_iconlist gui_icon_list[];
 #define ICON_CHTFILE		gui_icon_list[22]
 #define ICON_MSG			gui_icon_list[23]
 #define ICON_BUTTON			gui_icon_list[24]
+#define ICON_PROGRESS			gui_icon_list[25]
+#define ICON_NPROGRESS			gui_icon_list[26]
 
 /******************************************************************************
  *

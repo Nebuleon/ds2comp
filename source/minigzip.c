@@ -16,6 +16,7 @@
 /* @(#) $Id: minigzip.c,v 1.1.1.1 1999/04/23 02:07:09 wsanchez Exp $ */
 
 #define DS2COMP_RETRY 55
+#define DS2COMP_STOP  56
 
 #include "zlib.h"
 #include "zutil.h"
@@ -63,7 +64,7 @@
 #endif
 #define SUFFIX_LEN (sizeof(GZ_SUFFIX)-1)
 
-#define BUFLEN      65536
+#define BUFLEN      16384
 #define MAX_NAME_LEN 1024
 
 #include "gui.h"
@@ -95,6 +96,7 @@ int error(message)
 /* ===========================================================================
  * Compress input to output then close both files.
  * Return Z_OK on success, Z_ERRNO or DS2COMP_RETRY otherwise.
+ * May return DS2COMP_STOP if the user interrupted the process.
  */
 
 int gz_compress(in, out)
@@ -120,6 +122,11 @@ int gz_compress(in, out)
             gzclose(out);
             return error(msg[MSG_ERROR_OUTPUT_FILE_WRITE]);
         }
+
+        if (ReadInputDuringCompression() & KEY_B)
+            return DS2COMP_STOP;
+
+        UpdateProgress(ftell(in));
     }
     fclose(in);
     if (gzclose(out) != Z_OK) {
@@ -132,6 +139,7 @@ int gz_compress(in, out)
 /* ===========================================================================
  * Uncompress input to output then close both files.
  * Return Z_OK on success, Z_ERRNO or DS2COMP_RETRY otherwise.
+ * May return DS2COMP_STOP if the user interrupted the process.
  */
 int gz_uncompress(in, out)
     gzFile in;
@@ -144,9 +152,9 @@ int gz_uncompress(in, out)
     for (;;) {
         len = gzread(in, buf, sizeof(buf));
         if (len < 0) {
+            gzerror(in, &err);
             gzclose(in);
             fclose(out);
-            // return error (gzerror(in, &err));
             return error(msg[MSG_ERROR_COMPRESSED_FILE_READ]);
         }
         if (len == 0) break;
@@ -156,6 +164,11 @@ int gz_uncompress(in, out)
             fclose(out);
             return error(msg[MSG_ERROR_OUTPUT_FILE_WRITE]);
 	}
+
+        if (ReadInputDuringCompression() & KEY_B)
+            return DS2COMP_STOP;
+
+        UpdateProgress(gzoffset(in));
     }
     if (fclose(out)) {
         gzclose(in);
@@ -169,11 +182,11 @@ int gz_uncompress(in, out)
     return Z_OK;
 }
 
-
 /* ===========================================================================
  * Compress the given file: create a corresponding .gz file and remove the
  * original.
- * Returns 1 on success or if the user does not want to retry.
+ * Returns 1 on success or if the user does not want to retry or has
+ *   interrupted the process.
  * Returns 0 on failure if the user wants to retry.
  */
 int GzipCompress(file, level)
@@ -195,6 +208,22 @@ int GzipCompress(file, level)
     strcpy(outfile, file);
     strcat(outfile, GZ_SUFFIX);
 
+    {
+        FILE *outCheck = fopen(outfile, "rb");
+        if (outCheck) {
+            // The .gz file exists. Ask the user if he or she wishes to
+            // overwrite it.
+            fclose(outCheck);  // ... after closing it
+            InitMessage ();
+            draw_string_vcenter(down_screen_addr, 36, 70, 190, COLOR_MSSG, msg[MSG_DIALOG_OVERWRITE_EXISTING_FILE]);
+
+            u32 result = draw_yesno_dialog(DOWN_SCREEN, 115, msg[MSG_FILE_OVERWRITE_WITH_A], msg[MSG_FILE_LEAVE_WITH_B]);
+            FiniMessage ();
+            if (result == 0 /* leave it */)
+                return 1; // user aborted
+        }
+    }
+
     out = gzopen(outfile, mode);
     if (out == NULL) {
         gzerror(out, &err);
@@ -206,6 +235,11 @@ int GzipCompress(file, level)
         gzclose(out);
         return error(msg[MSG_ERROR_INPUT_FILE_READ]) != DS2COMP_RETRY;
     }
+
+    // Get the length of the source file for progress indication
+    fseek(in, 0, SEEK_END);
+    InitProgress (msg[MSG_PROGRESS_COMPRESSING], file, ftell(in));
+    fseek(in, 0, SEEK_SET);
 
     int result = gz_compress(in, out);
     if (result == Z_OK) {
@@ -220,7 +254,8 @@ int GzipCompress(file, level)
 
 /* ===========================================================================
  * Uncompress the given file and remove the original.
- * Returns 1 on success or if the user does not want to retry.
+ * Returns 1 on success or if the user does not want to retry or has
+ *   interrupted the process.
  * Returns 0 on failure if the user wants to retry.
  */
 int GzipDecompress(file)
@@ -244,12 +279,41 @@ int GzipDecompress(file)
         infile = buf;
         strcat(infile, GZ_SUFFIX);
     }
+
+    {
+        FILE *outCheck = fopen(outfile, "rb");
+        if (outCheck) {
+            // The uncompressed file exists. Ask the user if he or she wishes
+            // to overwrite it.
+            fclose(outCheck);  // ... after closing it
+            InitMessage ();
+            draw_string_vcenter(down_screen_addr, 36, 70, 190, COLOR_MSSG, msg[MSG_DIALOG_OVERWRITE_EXISTING_FILE]);
+
+            u32 result = draw_yesno_dialog(DOWN_SCREEN, 115, msg[MSG_FILE_OVERWRITE_WITH_A], msg[MSG_FILE_LEAVE_WITH_B]);
+            FiniMessage ();
+            if (result == 0 /* leave it */)
+                return 1; // user aborted
+        }
+    }
+
     in = gzopen(infile, "rb");
     if (in == NULL) {
         gzerror(in, &err);
         // Even if err == Z_OK, a NULL gzFile is unusable.
         return error(msg[MSG_ERROR_COMPRESSED_FILE_READ]) != DS2COMP_RETRY;
     }
+
+    { // Get the length of the compressed file for progress indication
+        FILE *inCheck = fopen(infile, "rb");
+        if (inCheck == NULL) { // It existed just now...
+            gzclose(in);
+            return error(msg[MSG_ERROR_INPUT_FILE_READ]) != DS2COMP_RETRY;
+        }
+        fseek(inCheck, 0, SEEK_END);
+        InitProgress (msg[MSG_PROGRESS_DECOMPRESSING], infile, ftell(inCheck));
+        fclose(inCheck);
+    }
+
     out = fopen(outfile, "wb");
     if (out == NULL) {
         gzclose(in);

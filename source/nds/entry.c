@@ -18,12 +18,3 @@ int sfc_main (int argc, char **argv)
     return (0);
 }
 
-unsigned int ReadInputDuringCompression ()
-{
-    struct key_buf inputdata;
-
-	ds2_getrawInput(&inputdata);
-
-	return inputdata.key & ~(KEY_LID);
-}
-

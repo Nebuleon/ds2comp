@@ -352,12 +352,70 @@ void InitMessage (void)
     draw_message(down_screen_addr, NULL, 28, 31, 227, 165, COLOR_BG);
 }
 
+static char ProgressAction[64];
+static char ProgressFilename[MAX_PATH + 1];
+static unsigned int ProgressTotalSize;
+static unsigned int ProgressDoneSize;
+static unsigned int LastProgressUpdateTime; // getSysTime() units: 42.667 us
+
+void InitProgress (char *Action, char *Filename, unsigned int TotalSize)
+{
+    strcpy(ProgressAction, Action);
+    strcpy(ProgressFilename, Filename);
+    ProgressTotalSize = TotalSize;
+    LastProgressUpdateTime = 0;
+
+    UpdateProgress (0);
+}
+
+#define PROGRESS_BAR_WIDTH (ICON_PROGRESS.x)
+
+void UpdateProgress (unsigned int DoneSize)
+{
+    ProgressDoneSize = DoneSize;
+
+    unsigned int Now = getSysTime();
+    if (Now - LastProgressUpdateTime >= 5859 /* 250 milliseconds in 42.667 us units */
+        || ProgressDoneSize == ProgressTotalSize /* force update if done */)
+    {
+        LastProgressUpdateTime = Now;
+        // If you want to add skinning support for the upper screen, edit this.
+        ds2_clearScreen(UP_SCREEN, RGB15(0, 0, 0));
+
+        draw_string_vcenter(up_screen_addr, 1, 48, 254, RGB15(31, 31, 31), ProgressAction);
+
+        draw_string_vcenter(up_screen_addr, 1, 64, 254, RGB15(31, 31, 31), ProgressFilename);
+
+        char ByteCountLine[128];
+        sprintf(ByteCountLine, msg[FMT_PROGRESS_KIBIBYTE_COUNT], ProgressDoneSize / 1024, ProgressTotalSize / 1024);
+        draw_string_vcenter(up_screen_addr, 1, 114, 254, RGB15(31, 31, 31), ByteCountLine);
+
+        draw_string_vcenter(up_screen_addr, 1, 130, 254, RGB15(31, 31, 31), msg[MSG_PROGRESS_CANCEL_WITH_B]);
+
+        unsigned int PixelsDone = (unsigned int) (((unsigned long long) ProgressDoneSize * (unsigned long long) PROGRESS_BAR_WIDTH) / (unsigned long long) ProgressTotalSize);
+
+        show_icon(up_screen_addr, &ICON_NPROGRESS, (SCREEN_WIDTH - PROGRESS_BAR_WIDTH) / 2, 80);
+        show_partial_icon_horizontal(up_screen_addr, &ICON_PROGRESS, (SCREEN_WIDTH - PROGRESS_BAR_WIDTH) / 2, 80, PixelsDone);
+
+        ds2_flipScreen(UP_SCREEN, UP_SCREEN_UPDATE_METHOD);
+    }
+}
+
 void FiniMessage (void)
 {
     mdelay(100); // to prevent ds2_setBacklight from crashing
     ds2_setBacklight(2);
 
     wait_Allkey_release(0);
+}
+
+unsigned int ReadInputDuringCompression ()
+{
+    struct key_buf inputdata;
+
+	ds2_getrawInput(&inputdata);
+
+	return inputdata.key & ~(KEY_LID);
 }
 
 void change_ext(char *src, char *buffer, char *extension)
@@ -1639,7 +1697,7 @@ u32 menu()
 	ds2_setBacklight(1);
 	
 	wait_Allkey_release(0);
-    bg_screenp= (u16*)malloc(256*192*2);
+	bg_screenp= (u16*)malloc(256*192*2);
 
 	repeat = 1;
 

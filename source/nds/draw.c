@@ -96,7 +96,9 @@ struct gui_iconlist gui_icon_list[]= {
 	/* 21 */ {"nbacko", 19, 13, NULL},
 	/* 22 */ {"chtfile", 16, 15, NULL},
 	/* 23 */ {"smsgfr", 193, 111, NULL},
-	/* 24 */ {"sbutto", 76, 16, NULL}
+	/* 24 */ {"sbutto", 76, 16, NULL},
+	/* 25 */ {"sprog", 256, 32, NULL},
+	/* 26 */ {"snprog", 256, 32, NULL}
                         };
 
 
@@ -817,102 +819,6 @@ u32 draw_yesno_dialog(enum SCREEN_ID screen, u32 sy, char *yes, char *no)
 }
 
 /*
-*	Draw hotkey dialog
-*	Returns DS keys pressed, as in ds2io.h.
-*/
-u32 draw_hotkey_dialog(enum SCREEN_ID screen, u32 sy, char *clear, char *cancel)
-{
-    u16 unicode[8];
-    u32 len, width, box_width, i;
-    char *string;
-	void* screen_addr;
-
-    len= 0;
-    string= clear;
-    while(*string)
-    {
-        string= utf8decode(string, &unicode[len]);
-        if(unicode[len] != 0x0D && unicode[len] != 0x0A)
-        {
-            if(len < 8) len++;
-            else break;
-        }
-    }
-    width= BDF_cut_unicode(unicode, len, 0, 3);
-    
-    len= 0;
-    string= cancel;
-    while(*string)
-    {
-        string= utf8decode(string, &unicode[len]);
-        if(unicode[len] != 0x0D && unicode[len] != 0x0A)
-        {
-            if(len < 8) len++;
-            else    break;
-        }
-    }
-    i= BDF_cut_unicode(unicode, len, 0, 3);
-
-    if(width < i)   width= i;
-    box_width= 64;
-    if(box_width < (width +6)) box_width = width +6;
-
-	if(screen & UP_MASK)
-		screen_addr = up_screen_addr;
-	else
-		screen_addr = down_screen_addr;
-
-    i= SCREEN_WIDTH/2 - box_width - 2;
-	show_icon((unsigned short*)screen_addr, &ICON_BUTTON, 49, 128);
-    draw_string_vcenter((unsigned short*)screen_addr, 51, 130, 73, COLOR_WHITE, clear);
-
-    i= SCREEN_WIDTH/2 + 3;
-	show_icon((unsigned short*)screen_addr, &ICON_BUTTON, 136, 128);
-    draw_string_vcenter((unsigned short*)screen_addr, 138, 130, 73, COLOR_WHITE, cancel);
-
-	ds2_flipScreen(screen, 2);
-
-	// This function has been started by a key press. Wait for it to end.
-	struct key_buf inputdata;
-	do {
-		mdelay(1);
-		ds2_getrawInput(&inputdata);
-	} while (inputdata.key != 0);
-
-	// While there are no keys pressed, wait for keys.
-	do {
-		mdelay(1);
-		ds2_getrawInput(&inputdata);
-	} while (inputdata.key == 0);
-
-	// Now, while there are keys pressed, keep a tally of keys that have
-	// been pressed. (IGNORE TOUCH AND LID! Otherwise, closing the lid or
-	// touching to get to the menu will do stuff the user doesn't expect.
-	// Also ignore the direction pad because every game uses it.)
-	u32 TotalKeys = 0;
-
-	do {
-		TotalKeys |= inputdata.key & ~(KEY_TOUCH | KEY_LID | KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT);
-		// If there's a touch on either button, turn it into a
-		// clear (A) or cancel (B) request.
-		if (inputdata.key & KEY_TOUCH)
-		{
-			if (inputdata.y >= 128 && inputdata.y < 128 + ICON_BUTTON.y)
-			{
-				if (inputdata.x >= 49 && inputdata.x < 49 + ICON_BUTTON.x)
-					return KEY_A;
-				else if (inputdata.x >= 136 && inputdata.x < 136 + ICON_BUTTON.x)
-					return KEY_B;
-			}
-		}
-		mdelay(1);
-		ds2_getrawInput(&inputdata);
-	} while (inputdata.key != 0 || TotalKeys == 0);
-
-	return TotalKeys;
-}
-
-/*
 *	Drawing progress bar
 */
 static enum SCREEN_ID _progress_screen_id;
@@ -1290,6 +1196,34 @@ void show_icon(void* screen, struct gui_iconlist* icon, u32 x, u32 y)
 
         dst += NDS_SCREEN_WIDTH;
     }
+}
+
+/*************************************************************/
+/*
+ * Useful for showing progress bars.
+ */
+void show_partial_icon_horizontal(void* screen, struct gui_iconlist* icon, u32 x, u32 y, u32 width)
+{
+    if (width > icon->x) width = icon->x;
+
+    u32 i, k;
+    unsigned short *src, *dst;
+
+    src= (unsigned short*)icon->iconbuff;
+    dst = (unsigned short*)screen + y*NDS_SCREEN_WIDTH + x;
+	if(NULL == src) return;	//The icon may initialized failure
+
+	for(i= 0; i < icon->y; i++)
+	{
+		for(k= 0; k < width; k++)
+		{
+			if(0x03E0 != *src) dst[k]= *src;
+			src++;
+		}
+		src += icon->x - width;
+
+		dst += NDS_SCREEN_WIDTH;
+	}
 }
 
 /*************************************************************/

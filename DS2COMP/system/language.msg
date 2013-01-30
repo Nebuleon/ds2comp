@@ -63,6 +63,10 @@ The destination file already exists. Do you wish to overwrite it?
 Compressing...
 #MSG_PROGRESS_DECOMPRESSING
 Decompressing...
+#MSG_PROGRESS_KIBIBYTE_COUNT
+%d of %d KiB
+#MSG_PROGRESS_CANCEL_WITH_B
+[B] to cancel
 #MSG_ERROR_INPUT_FILE_READ
 Failed to read some of the input file. Check that the storage card is properly secured.
 #MSG_ERROR_COMPRESSED_FILE_READ
