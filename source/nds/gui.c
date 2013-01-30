@@ -29,7 +29,6 @@
 #include "fs_api.h"
 #include "key.h"
 #include "gui.h"
-#include "entry.h"
 #include "draw.h"
 #include "message.h"
 #include "bitmap.h"
