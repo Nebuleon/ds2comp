@@ -2142,8 +2142,12 @@ void init_application_config(void)
 {
 	memset(&application_config, 0, sizeof(application_config));
 	application_config.language = 0;     // Default language: English
-	// Default trade-off between compression and speed: Balanced
-	application_config.CompressionLevel = 6;
+	// Default trade-off between compression and speed: Speed
+	// The processor in the DSTwo is just not the same as a 3.0 GHz
+	// quad core, and the gains gotten from using "computer gzip"'s
+	// default of 6 over the full speed of 1 are minimal.
+	// The user can set his or her preference in Options anyway. [Neb]
+	application_config.CompressionLevel = 1;
 }
 
 /*--------------------------------------------------------
