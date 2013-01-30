@@ -1358,7 +1358,7 @@ u32 menu()
 				level = 1;
 			else if (level > 9)
 				level = 9;
-			while (!GzipCompress (line_buffer, level /* TODO Levels above 6 [Neb] */)); // retry if needed
+			while (!GzipCompress (line_buffer, level )); // retry if needed
 			ds2_setCPUclocklevel(0);
 
 			return_value = 1;
