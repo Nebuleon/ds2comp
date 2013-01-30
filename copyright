@@ -1,0 +1,94 @@
+DS2Compress (C) 2013 GBAtemp user Nebuleon
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation; either version 2 of
+the License, or (at your option) any later version.
+
+Some source code with this sdk belong to the source's author, copyright 
+information are in the source files.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+
+- - - Based on - - -
+
+DS2Compress's GUI is based on CATSFC's GUI.
+
+CATSFC (C) 2010-2013 dking <dking024@gmail.com>,
+  GBAtemp users BassAceGold, ShadauxCat and Nebuleon.
+
+CATSFC is released under the same license as DS2Compress, the GNU General
+Public License version 2 or later. See the license text above.
+
+Many files have been removed as they are unnecessary for the operation of
+DS2Compress. Those files deal with SNES emulation.
+
+The entire source code for CATSFC is available at
+<http://github.com/ShadauxCat/CATSFC>.
+
+----
+
+gzip (C) 1992-1993 Jean-Loup Gailly, Mark Adler.
+
+gzip is released under the same license as DS2Compress, the GNU General Public
+License version 2 or later. See the license text above.
+
+This software may be covered by software interoperability laws in some
+countries, as gzip is an established compression format.
+
+Some files have been removed as they are unnecessary for the operation of
+DS2Compress. Those files are mainly documentation for users dealing with the
+command-line version of gzip, documentation of the algorithm and auxiliary
+executables such as zcat.
+
+The entire source code for gzip is available at <http://www.gzip.org/>.
+
+- - - Using icons - - -
+
+Compression tool icon from the Oropax.200 Icon Set by deviantART user 878952.
+
+Some rights reserved. This work is licensed under a Creative Commons
+Attribution-Noncommercial-No Derivative Works 3.0 License.
+
+This icon is used in DS2Compress with the understanding that this is a
+non-commercial project. If you wish to resell DS2Compress, you will need to use
+a different icon. This does not affect the GPL status of the program's code.
+
+This icon is used in DS2Compress with the assumption that cutting white from
+an icon and showing its main part is not a derivative work, in the same way
+that cutting silence from a music track is not a derivative work. Either way,
+using the icon in an application may make it a derivative work of the icon.
+If this is a problem, the application will need to use a different icon.
+
+See it here: http://878952.deviantart.com/art/Oropax-200-129161161
+
+The full text of the license is found here:
+http://creativecommons.org/licenses/by-nc-nd/3.0/
+
+----
+
+sbutto.svg, smnsel.svg, smsel.svg, smsgfr.svg, stitle.svg, subsela.svg:
+
+Created by GBAtemp user Nebuleon.
+
+Some rights reserved. This work is licensed under a Creative Commons
+Attribution-ShareAlike 3.0 license.
+
+The full text of the license is found here:
+http://creativecommons.org/licenses/by-sa/3.0/
+
+----
+
+applications-system.svg, media-flash.svg, system-log-out.svg, folder.svg,
+  go-next.svg:
+
+Created by artists for the Tango Icon Project.
+
+This work is in the public domain.

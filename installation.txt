@@ -1,0 +1,3 @@
+To install:
+
+Place ds2comp.plg, ds2comp.bmp, and ds2comp.ini in the _dstwoplug folder of your DSTWO.  Place the DS2COMP folder in your dstwo's root folder (the one that contains _dstwo, _dstwoplug, etc).
