@@ -87,8 +87,6 @@ int sfc_main (int argc, char **argv)
 	//Initialize GUI
 	gui_init(0);
 
-	// Initialise zlib if needed, here.
-
 	while (1)
 	{
 		menu();

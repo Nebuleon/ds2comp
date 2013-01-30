@@ -34,7 +34,8 @@ extern "C" {
 struct _APPLICATION_CONFIG
 {
   u32 language;
-  u32 Reserved[127];
+  u32 CompressionLevel;
+  u32 Reserved[126];
 };
 
 typedef enum

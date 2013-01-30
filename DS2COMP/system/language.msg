@@ -23,6 +23,8 @@ Decompress
 Options
 #MSG_MAIN_MENU_EXIT
 Exit
+#FMT_OPTIONS_COMPRESSION_LEVEL
+Compression level            %d
 #FMT_OPTIONS_LANGUAGE
 Language                          %s
 #MSG_OPTIONS_CARD_CAPACITY

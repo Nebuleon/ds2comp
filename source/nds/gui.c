@@ -1266,6 +1266,7 @@ u32 menu()
 	auto void menu_load_for_compression();
 	auto void menu_load_for_decompression();
 	auto void others_menu_init();
+	auto void others_menu_end();
 	auto void check_application_version();
 	auto void language_set();
 	auto void show_card_space();
@@ -1275,7 +1276,6 @@ u32 menu()
 	void menu_exit()
 	{
 		ds2_setCPUclocklevel(13); // Crank it up, leave quickly
-		save_application_config_file();
 		quit();
 	}
 
@@ -1296,7 +1296,12 @@ u32 menu()
 			ds2_setBacklight(2);
 
 			ds2_setCPUclocklevel(13);
-			while (!GzipCompress (line_buffer, 6 /* TODO Levels above 6 [Neb] */)); // retry if needed
+			u32 level = application_config.CompressionLevel;
+			if (level == 0)
+				level = 1;
+			else if (level > 9)
+				level = 9;
+			while (!GzipCompress (line_buffer, level /* TODO Levels above 6 [Neb] */)); // retry if needed
 			ds2_setCPUclocklevel(0);
 
 			return_value = 1;
@@ -1468,18 +1473,20 @@ u32 menu()
 	{
 	/* 00 */ SUBMENU_OPTION(NULL, &msg[MSG_MAIN_MENU_OPTIONS], NULL, 0),
 
-	/* 01 */ STRING_SELECTION_OPTION(language_set, NULL, &msg[FMT_OPTIONS_LANGUAGE], language_options, 
-        &application_config.language, sizeof(language_options) / sizeof(language_options[0]) /* number of possible languages */, NULL, ACTION_TYPE, 1),
+	/* 01 */ NUMERIC_SELECTION_OPTION(NULL, &msg[FMT_OPTIONS_COMPRESSION_LEVEL], &application_config.CompressionLevel, 10, NULL, 1),
 
-	/* 02 */ STRING_SELECTION_OPTION(NULL, show_card_space, &msg[MSG_OPTIONS_CARD_CAPACITY], NULL, 
-        &desert, 2, NULL, PASSIVE_TYPE | HIDEN_TYPE, 2),
+	/* 02 */ STRING_SELECTION_OPTION(language_set, NULL, &msg[FMT_OPTIONS_LANGUAGE], language_options, 
+        &application_config.language, sizeof(language_options) / sizeof(language_options[0]) /* number of possible languages */, NULL, ACTION_TYPE, 2),
 
-	/* 03 */ ACTION_OPTION(load_default_setting, NULL, &msg[MSG_OPTIONS_RESET], NULL, 3),
+	/* 03 */ STRING_SELECTION_OPTION(NULL, show_card_space, &msg[MSG_OPTIONS_CARD_CAPACITY], NULL, 
+        &desert, 2, NULL, PASSIVE_TYPE | HIDEN_TYPE, 3),
 
-	/* 04 */ ACTION_OPTION(check_application_version, NULL, &msg[MSG_OPTIONS_VERSION], NULL, 4),
+	/* 04 */ ACTION_OPTION(load_default_setting, NULL, &msg[MSG_OPTIONS_RESET], NULL, 4),
+
+	/* 05 */ ACTION_OPTION(check_application_version, NULL, &msg[MSG_OPTIONS_VERSION], NULL, 5),
 	};
 
-	MAKE_MENU(others, others_menu_init, NULL, NULL, NULL, 1, 1);
+	MAKE_MENU(others, others_menu_init, NULL, NULL, others_menu_end, 1, 1);
 
   /*--------------------------------------------------------
      MAIN MENU
@@ -1603,6 +1610,11 @@ u32 menu()
 		freespace = 0;
 		fat_getDiskSpaceInfo("fat:", &total, &used, &freespace);
     }
+
+	void others_menu_end()
+	{
+		save_application_config_file();
+	}
 
 	void choose_menu(MENU_TYPE *new_menu)
 	{
@@ -1926,8 +1938,6 @@ u32 menu()
 		current_menu->end_function();
 
 	if(bg_screenp != NULL) free((void*)bg_screenp);
-
-	save_application_config_file();
 	
 	ds2_clearScreen(DOWN_SCREEN, 0);
 	ds2_flipScreen(DOWN_SCREEN, DOWN_SCREEN_UPDATE_METHOD);
@@ -2075,7 +2085,9 @@ u32 load_font()
 void init_application_config(void)
 {
 	memset(&application_config, 0, sizeof(application_config));
-	application_config.language = 0;     //defalut language= English
+	application_config.language = 0;     // Default language: English
+	// Default trade-off between compression and speed: Balanced
+	application_config.CompressionLevel = 6;
 }
 
 /*--------------------------------------------------------
@@ -2103,11 +2115,15 @@ int load_application_config_file(void)
 			fclose(fp);
 			return 0;
 		}
+		else
+		{
+			fclose(fp);
+		}
 	}
 
-	//have no confiure file, set default
+	// No configuration or in the wrong format. Set defaults.
 	init_application_config();
-    return -1;
+	return -1;
 }
 
 /*--------------------------------------------------------
@@ -2129,18 +2145,6 @@ int save_application_config_file()
     }
 
     return -1;
-}
-
-static void get_timestamp_string(char *buffer, u16 msg_id, u16 year, u16 mon, 
-    u16 day, u16 wday, u16 hour, u16 min, u16 sec, u32 msec)
-{
-    char *weekday_strings[] =
-    {
-        "SUN", "MON", "TUE", "WED", "TUR", "FRI", "SAT"
-    };
-
-    sprintf(buffer, "%s %02d/%02d/%04d %02d:%02d:%02d", weekday_strings[wday], 
-        day, mon, year, hour, min, sec);
 }
 
 void quit(void)
