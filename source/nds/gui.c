@@ -46,7 +46,7 @@ char *lang[2] =
 		"Français",					// 1
 	};
 
-char *language_options[] = { (char *) &lang[0], &lang[1] };
+char *language_options[] = { (char *) &lang[0], (char *) &lang[1] };
 
 /******************************************************************************
 *	Macro definition
@@ -258,10 +258,10 @@ gui_action_type get_gui_input(void)
 			mdelay(1);
 		} while (inputdata.key & KEY_LID);
 		ds2_wakeup();
-		// In the menu, the lower screen's backlight needs to be on,
-		// and it is on right away after resuming from suspend.
-		// mdelay(100); // needed to avoid ds2_setBacklight crashing
-		// ds2_setBacklight(3);
+		// In the menu, the upper screen's backlight can be off,
+		// but it is on right away after resuming from suspend.
+		mdelay(100); // needed to avoid ds2_setBacklight crashing
+		ds2_setBacklight(1);
 	}
 
 	switch(key)
@@ -344,16 +344,10 @@ void wait_Allkey_release(unsigned int key_list)
 	}
 }
 
-void InitMessage (void)
-{
-    mdelay(100); // to prevent ds2_setBacklight from crashing
-    ds2_setBacklight(3);
-
-    draw_message(down_screen_addr, NULL, 28, 31, 227, 165, COLOR_BG);
-}
-
 static char ProgressAction[64];
 static char ProgressFilename[MAX_PATH + 1];
+static unsigned int ProgressCurrentFile; // 1-based
+static unsigned int ProgressTotalFiles;
 static unsigned int ProgressTotalSize;
 static unsigned int ProgressDoneSize;
 static unsigned int LastProgressUpdateTime; // getSysTime() units: 42.667 us
@@ -366,6 +360,23 @@ void InitProgress (char *Action, char *Filename, unsigned int TotalSize)
     LastProgressUpdateTime = 0;
 
     UpdateProgress (0);
+}
+
+void InitProgressMultiFile (char *Action, char *Filename, unsigned int TotalFiles)
+{
+    strcpy(ProgressAction, Action);
+    strcpy(ProgressFilename, Filename);
+    ProgressTotalFiles = TotalFiles;
+}
+
+void UpdateProgressChangeFile (unsigned int CurrentFile, unsigned int TotalSize)
+{
+    ProgressCurrentFile = CurrentFile;
+    ProgressTotalSize = TotalSize;
+    LastProgressUpdateTime = 0; // force an update when changing files
+    // if this is too slow, move it to InitProgressMultiFile above
+
+    UpdateProgressMultiFile (0);
 }
 
 #define PROGRESS_BAR_WIDTH (ICON_PROGRESS.x)
@@ -401,12 +412,54 @@ void UpdateProgress (unsigned int DoneSize)
     }
 }
 
+void UpdateProgressMultiFile (unsigned int DoneSize)
+{
+    ProgressDoneSize = DoneSize;
+
+    unsigned int Now = getSysTime();
+    if (Now - LastProgressUpdateTime >= 5859 /* 250 milliseconds in 42.667 us units */
+        || ProgressDoneSize == ProgressTotalSize /* force update if done */)
+    {
+        LastProgressUpdateTime = Now;
+        // If you want to add skinning support for the upper screen, edit this.
+        ds2_clearScreen(UP_SCREEN, RGB15(0, 0, 0));
+
+        draw_string_vcenter(up_screen_addr, 1, 48, 254, RGB15(31, 31, 31), ProgressAction);
+
+        draw_string_vcenter(up_screen_addr, 1, 64, 254, RGB15(31, 31, 31), ProgressFilename);
+
+        char ByteCountLine[128];
+        sprintf(ByteCountLine, msg[FMT_PROGRESS_ARCHIVE_MEMBER_AND_KIBIBYTE_COUNT], ProgressCurrentFile, ProgressTotalFiles, ProgressDoneSize / 1024, ProgressTotalSize / 1024);
+        draw_string_vcenter(up_screen_addr, 1, 114, 254, RGB15(31, 31, 31), ByteCountLine);
+
+        draw_string_vcenter(up_screen_addr, 1, 130, 254, RGB15(31, 31, 31), msg[MSG_PROGRESS_CANCEL_WITH_B]);
+
+        unsigned int PixelsDone = (unsigned int) (((unsigned long long) ProgressDoneSize * (unsigned long long) PROGRESS_BAR_WIDTH) / (unsigned long long) ProgressTotalSize);
+
+        show_icon(up_screen_addr, &ICON_NPROGRESS, (SCREEN_WIDTH - PROGRESS_BAR_WIDTH) / 2, 80);
+        show_partial_icon_horizontal(up_screen_addr, &ICON_PROGRESS, (SCREEN_WIDTH - PROGRESS_BAR_WIDTH) / 2, 80, PixelsDone);
+
+        ds2_flipScreen(UP_SCREEN, UP_SCREEN_UPDATE_METHOD);
+    }
+}
+
+void InitMessage (void)
+{
+    ds2_setCPUclocklevel(0);
+
+    mdelay(100); // to prevent ds2_setBacklight from crashing
+    ds2_setBacklight(3);
+
+    draw_message(down_screen_addr, NULL, 28, 31, 227, 165, COLOR_BG);
+}
+
 void FiniMessage (void)
 {
     mdelay(100); // to prevent ds2_setBacklight from crashing
     ds2_setBacklight(2);
 
     wait_Allkey_release(0);
+    ds2_setCPUclocklevel(13);
 }
 
 unsigned int ReadInputDuringCompression ()
@@ -1138,12 +1191,8 @@ s32 load_file(char **wildcards, char *result, char *default_dir_name)
 				else {
 					pt= strrchr(file_list[m], '.');
 
-					if(!strcasecmp(pt, ".smc") || !strcasecmp(pt, ".sfc"))
-						show_icon(down_screen_addr, &ICON_SFCFILE, 17, 37 + k*27);
-					else if(!strcasecmp(pt, ".zip"))
+					if(!strcasecmp(pt, ".zip") || !strcasecmp(pt, ".gz"))
 						show_icon(down_screen_addr, &ICON_ZIPFILE, 17, 37 + k*27);
-					else if(!strcasecmp(pt, ".cht"))
-						show_icon(down_screen_addr, &ICON_CHTFILE, 17, 37 + k*27);
 					else if(!strcasecmp(file_list[m], ".."))
 						show_icon(down_screen_addr, &ICON_DOTDIR, 17, 37 + k*27);
 					else //Not recoganized file
@@ -1171,12 +1220,8 @@ s32 load_file(char **wildcards, char *result, char *default_dir_name)
 			else {
 				pt= strrchr(file_list[n], '.');
 
-				if(!strcasecmp(pt, ".smc"))
-					show_icon(down_screen_addr, &ICON_SFCFILE, 17, 37 + m*27);
-				else if(!strcasecmp(pt, ".zip"))
+				if(!strcasecmp(pt, ".zip") || !strcasecmp(pt, ".gz"))
 					show_icon(down_screen_addr, &ICON_ZIPFILE, 17, 37 + m*27);
-				else if(!strcasecmp(pt, ".cht"))
-					show_icon(down_screen_addr, &ICON_CHTFILE, 17, 37 + m*27);
 				else if(!strcasecmp(file_list[m], ".."))
 					show_icon(down_screen_addr, &ICON_DOTDIR, 17, 37 + m*27);
 				else //Not recoganized file
@@ -1372,7 +1417,7 @@ u32 menu()
 
 	void menu_load_for_decompression()
 	{
-		char *file_ext[] = { ".gz", NULL };
+		char *file_ext[] = { ".gz", ".zip", NULL };
 
 		if(load_file(file_ext, tmp_filename, g_default_rom_dir) != -1)
 		{
@@ -1387,7 +1432,10 @@ u32 menu()
 			ds2_setBacklight(2);
 
 			ds2_setCPUclocklevel(13);
-			while (!GzipDecompress (line_buffer)); // retry if needed
+			if (strcasecmp(&line_buffer[strlen(line_buffer) - 3 /* .gz */], ".gz") == 0)
+				while (!GzipDecompress (line_buffer)); // retry if needed
+			else if (strcasecmp(&line_buffer[strlen(line_buffer) - 4 /* .zip */], ".zip") == 0)
+				while (!ZipUncompress (line_buffer)); // retry if needed
 			ds2_setCPUclocklevel(0);
 
 			return_value = 1;

@@ -123,8 +123,11 @@ int gz_compress(in, out)
             return error(msg[MSG_ERROR_OUTPUT_FILE_WRITE]);
         }
 
-        if (ReadInputDuringCompression() & KEY_B)
+        if (ReadInputDuringCompression() & KEY_B) {
+            fclose(in);
+            gzclose(out);
             return DS2COMP_STOP;
+        }
 
         UpdateProgress(ftell(in));
     }
@@ -165,8 +168,11 @@ int gz_uncompress(in, out)
             return error(msg[MSG_ERROR_OUTPUT_FILE_WRITE]);
 	}
 
-        if (ReadInputDuringCompression() & KEY_B)
+        if (ReadInputDuringCompression() & KEY_B) {
+            gzclose(in);
+            fclose(out);
             return DS2COMP_STOP;
+        }
 
         UpdateProgress(gzoffset(in));
     }

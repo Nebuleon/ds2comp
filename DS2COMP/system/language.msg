@@ -42,6 +42,10 @@ On
 [A] Confirm
 #MSG_GENERAL_CANCEL_WITH_B
 [B] Cancel
+#MSG_GENERAL_YES_WITH_A
+[A] Yes
+#MSG_GENERAL_NO_WITH_B
+[B] No
 #MSG_CHANGE_LANGUAGE
 Changing language...
 #MSG_CHANGE_LANGUAGE_WAITING
@@ -56,6 +60,10 @@ Reset all settings to defaults?
 Please wait...
 #MSG_DIALOG_OVERWRITE_EXISTING_FILE
 The destination file already exists. Do you wish to overwrite it?
+#MSG_DIALOG_OVERWRITE_ALL_FILES
+Do you additionally wish to overwrite all existing files for this .zip archive?
+#MSG_DIALOG_LEAVE_ALL_FILES
+Do you additionally wish to leave all existing files intact for this .zip archive?
 #MSG_FILE_OVERWRITE_WITH_A
 [A] Overwrite
 #MSG_FILE_LEAVE_WITH_B
@@ -66,6 +74,8 @@ Compressing...
 Decompressing...
 #MSG_PROGRESS_KIBIBYTE_COUNT
 %d of %d KiB
+#MSG_PROGRESS_ARCHIVE_MEMBER_AND_KIBIBYTE_COUNT
+File %d of %d  -  %d of %d KiB
 #MSG_PROGRESS_CANCEL_WITH_B
 [B] to cancel
 #MSG_ERROR_INPUT_FILE_READ
@@ -111,6 +121,10 @@ En fonction
 [A] Confirmer
 #MSG_GENERAL_CANCEL_WITH_B
 [B] Annuler
+#MSG_GENERAL_YES_WITH_A
+[A] Oui
+#MSG_GENERAL_NO_WITH_B
+[B] Non
 #MSG_CHANGE_LANGUAGE
 Changement de la langue...
 #MSG_CHANGE_LANGUAGE_WAITING
@@ -125,6 +139,10 @@ Remettre tous les paramètres à zéro?
 Veuillez patienter...
 #MSG_DIALOG_OVERWRITE_EXISTING_FILE
 Le fichier de desination existe déjà. Voulez-vous l'écraser?
+#MSG_DIALOG_OVERWRITE_ALL_FILES
+Voulez-vous aussi écraser tous les fichiers existants pour cette archive .zip?
+#MSG_DIALOG_LEAVE_ALL_FILES
+Voulez-vous aussi garder tous les fichiers existants pour cette archive .zip?
 #MSG_FILE_OVERWRITE_WITH_A
 [A] Écraser
 #MSG_FILE_LEAVE_WITH_B
@@ -135,6 +153,8 @@ Compression...
 Décompression...
 #MSG_PROGRESS_KIBIBYTE_COUNT
 %d de %d Kio
+#MSG_PROGRESS_ARCHIVE_MEMBER_AND_KIBIBYTE_COUNT
+Fichier %d de %d  -  %d de %d Kio
 #MSG_PROGRESS_CANCEL_WITH_B
 [B] pour annuler
 #MSG_ERROR_INPUT_FILE_READ

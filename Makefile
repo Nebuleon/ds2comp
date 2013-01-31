@@ -35,7 +35,8 @@ C_SOURCES   = source/unzip/explode.c source/unzip/unreduce.c \
               source/unzip/unshrink.c source/unzip/unzip.c \
               source/nds/bdf_font.c source/nds/bitmap.c \
               source/nds/draw.c source/nds/ds2_main.c \
-              source/nds/gui.c source/minigzip.c source/nds/entry.c
+              source/nds/gui.c source/minigzip.c source/miniunz.c \
+              source/nds/entry.c
 CPP_SOURCES =
 SOURCES      = $(C_SOURCES) $(CPP_SOURCES)
 C_OBJECTS    = $(C_SOURCES:.c=.o)

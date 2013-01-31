@@ -67,38 +67,36 @@ struct gui_iconlist gui_icon_list[]= {
     //file system
     /* 00 */ {"zipfile", 16, 16, NULL},
     /* 01 */ {"directory", 16, 16, NULL},
-    /* 02 */ {"sfcfile", 16, 16, NULL},
 
 	//title
-	/* 03 */ {"stitle", 256, 33, NULL},
+	/* 02 */ {"stitle", 256, 33, NULL},
 	//main menu
-	/* 04 */ {"sexito", 128, 81, NULL},
-	/* 05 */ {"scomp", 128, 81, NULL},
-	/* 06 */ {"sdecomp", 128, 81, NULL},
-	/* 07 */ {"sopts", 128, 81, NULL},
-	/* 08 */ {"smsel", 79, 15, NULL},
-	/* 09 */ {"smnsel", 79, 15, NULL},
+	/* 03 */ {"sexito", 128, 81, NULL},
+	/* 04 */ {"scomp", 128, 81, NULL},
+	/* 05 */ {"sdecomp", 128, 81, NULL},
+	/* 06 */ {"sopts", 128, 81, NULL},
+	/* 07 */ {"smsel", 79, 15, NULL},
+	/* 08 */ {"smnsel", 79, 15, NULL},
 
-	/* 10 */ {"snexito", 128, 81, NULL},
-	/* 11 */ {"sncomp", 128, 81, NULL},
-	/* 12 */ {"sndecomp", 128, 81, NULL},
-	/* 13 */ {"snopts", 128, 81, NULL},
+	/* 09 */ {"snexito", 128, 81, NULL},
+	/* 10 */ {"sncomp", 128, 81, NULL},
+	/* 11 */ {"sndecomp", 128, 81, NULL},
+	/* 12 */ {"snopts", 128, 81, NULL},
 
-	/* 14 */ {"sunnof", 16, 16, NULL},
-	/* 15 */ {"smaybgo", 256, 192, NULL},
+	/* 13 */ {"sunnof", 16, 16, NULL},
+	/* 14 */ {"smaybgo", 256, 192, NULL},
 
-	/* 16 */ {"sticon", 29, 13, NULL},
-	/* 17 */ {"ssubbg", 256, 192, NULL},
+	/* 15 */ {"sticon", 29, 13, NULL},
+	/* 16 */ {"ssubbg", 256, 192, NULL},
 
-	/* 18 */ {"subsela", 245, 22, NULL},
-	/* 19 */ {"fdoto", 16, 16, NULL},
-	/* 20 */ {"backo", 19, 13, NULL},
-	/* 21 */ {"nbacko", 19, 13, NULL},
-	/* 22 */ {"chtfile", 16, 15, NULL},
-	/* 23 */ {"smsgfr", 193, 111, NULL},
-	/* 24 */ {"sbutto", 76, 16, NULL},
-	/* 25 */ {"sprog", 256, 32, NULL},
-	/* 26 */ {"snprog", 256, 32, NULL}
+	/* 17 */ {"subsela", 245, 22, NULL},
+	/* 18 */ {"fdoto", 16, 16, NULL},
+	/* 19 */ {"backo", 19, 13, NULL},
+	/* 20 */ {"nbacko", 19, 13, NULL},
+	/* 21 */ {"smsgfr", 193, 111, NULL},
+	/* 22 */ {"sbutto", 76, 16, NULL},
+	/* 23 */ {"sprog", 256, 32, NULL},
+	/* 24 */ {"snprog", 256, 32, NULL}
                         };
 
 
