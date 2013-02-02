@@ -7,6 +7,21 @@ Based on:
 * NDSSFC's GUI, by the Supercard team, improved by GBAtemp users BassAceGold,
   ShadauxCat (in CATSFC) and Nebuleon (in CATSFC)
 
+# CAVEATS
+
+* **Do not unpack files without extensions (such as README and ChangeLog)**
+  **from .zip files, or uncompress .gz files that have no extension before**
+  **.gz. They corrupt the filesystem and crash applications that read your**
+  **storage card!**
+* **Do not unpack .zip files that contain folders. The folders will not be**
+  **created, and every file will fail to be unpacked.**
+* **Unpacking some files creates a phantom file beside the real one. In**
+  **certain circumstances, these phantom files may cause your computer to**
+  **ask you to reformat your storage card. Do not reformat your card! In**
+  **certain circumstances, the files can cause other real files to fail to**
+  **be created correctly.**
+* **Please make backups of files on your hard drive if you're not sure.**
+
 # Compiling
 
 (If you downloaded the plugin ready-made, you can safely skip this section.
