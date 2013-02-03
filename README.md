@@ -1,4 +1,4 @@
-DS2Compress version 0.01, 2013-01-29
+DS2Compress version 0.50, 2013-02-01
 
 A fast gzip compressor and decompressor for the Supercard DSTWO.
 
@@ -43,8 +43,9 @@ then download version 1.2 of the DS2 SDK and extract its files into
 Additionally, you will need to add the updated `zlib` and filesystem access
 routines provided by BassAceGold and recompile `libds2a.a`. To do this:
 
-> sudo rm /opt/ds2sdk/{console,fs,key,zlib,Makefile}
+> sudo rm -r /opt/ds2sdk/{console,fs,key,zlib,Makefile}
 > sudo cp -r sdk-modifications/libsrc /opt/ds2sdk
+> sudo chmod -R a+rX /opt/ds2sdk/libsrc
 > cd /opt/ds2sdk/libsrc
 > sudo rm libds2a.a ../lib/libds2a.a
 > sudo make
