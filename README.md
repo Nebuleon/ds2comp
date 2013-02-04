@@ -57,9 +57,9 @@ anywhere, provided that you update the Makefile's `CROSS` variable to point to
 it.
 
 ## Making the plugin
-To make the plugin, `catsfc.plg`, use the `cd` command to change to the
-directory containing your copy of the CATSFC source, then type
-`make clean; make`. `catsfc.plg` should appear in the same directory.
+To make the plugin, `ds2comp.plg`, use the `cd` command to change to the
+directory containing your copy of the DS2Compress source, then type
+`make clean; make`. `ds2comp.plg` should appear in the same directory.
 
 # Installing
 
