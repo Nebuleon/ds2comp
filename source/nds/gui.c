@@ -62,6 +62,21 @@ APPLICATION_CONFIG application_config;
 
 #define SUBMENU_ROW_NUM 6
 
+// These are U+05C8 and subsequent codepoints encoded in UTF-8.
+const char HOTKEY_A_DISPLAY[] = {0xD7, 0x88, 0x00};
+const char HOTKEY_B_DISPLAY[] = {0xD7, 0x89, 0x00};
+const char HOTKEY_X_DISPLAY[] = {0xD7, 0x8A, 0x00};
+const char HOTKEY_Y_DISPLAY[] = {0xD7, 0x8B, 0x00};
+const char HOTKEY_L_DISPLAY[] = {0xD7, 0x8C, 0x00};
+const char HOTKEY_R_DISPLAY[] = {0xD7, 0x8D, 0x00};
+const char HOTKEY_START_DISPLAY[] = {0xD7, 0x8E, 0x00};
+const char HOTKEY_SELECT_DISPLAY[] = {0xD7, 0x8F, 0x00};
+// These are U+2190 and subsequent codepoints encoded in UTF-8.
+const char HOTKEY_LEFT_DISPLAY[] = {0xE2, 0x86, 0x90, 0x00};
+const char HOTKEY_UP_DISPLAY[] = {0xE2, 0x86, 0x91, 0x00};
+const char HOTKEY_RIGHT_DISPLAY[] = {0xE2, 0x86, 0x92, 0x00};
+const char HOTKEY_DOWN_DISPLAY[] = {0xE2, 0x86, 0x93, 0x00};
+
 #define MAKE_MENU(name, init_function, passive_function, key_function, end_function, \
 	focus_option, screen_focus)												  \
   MENU_TYPE name##_menu =                                                     \
@@ -1158,7 +1173,7 @@ s32 load_file(char **wildcards, char *result, char *default_dir_name)
 			//Path
 			if(-1 == redraw) {
 				draw_hscroll_over(0);
-				draw_hscroll_init(down_screen_addr, 49, 10, 170, COLOR_TRANS, 
+				draw_hscroll_init(down_screen_addr, 49, 10, 199, COLOR_TRANS, 
 					COLOR_WHITE, default_dir_name);
 				path_scroll = 0x8000;		//first scroll left
 			}
@@ -1184,7 +1199,7 @@ s32 load_file(char **wildcards, char *result, char *default_dir_name)
 
 				//directorys
 				if((m+1) > num_files) {
-					show_icon(down_screen_addr, &ICON_DIRECTORY, 17, 37 + k*27);
+					show_icon(down_screen_addr, &ICON_DIRECTORY, FILE_SELECTOR_ICON_X, 37 + k*27);
 					pt = dir_list[m - num_files];
 				}
 				//files
@@ -1192,16 +1207,16 @@ s32 load_file(char **wildcards, char *result, char *default_dir_name)
 					pt= strrchr(file_list[m], '.');
 
 					if(!strcasecmp(pt, ".zip") || !strcasecmp(pt, ".gz"))
-						show_icon(down_screen_addr, &ICON_ZIPFILE, 17, 37 + k*27);
+						show_icon(down_screen_addr, &ICON_ZIPFILE, FILE_SELECTOR_ICON_X, 37 + k*27);
 					else if(!strcasecmp(file_list[m], ".."))
-						show_icon(down_screen_addr, &ICON_DOTDIR, 17, 37 + k*27);
+						show_icon(down_screen_addr, &ICON_DOTDIR, FILE_SELECTOR_ICON_X, 37 + k*27);
 					else //Not recoganized file
-						show_icon(down_screen_addr, &ICON_UNKNOW, 17, 37 + k*27);
+						show_icon(down_screen_addr, &ICON_UNKNOW, FILE_SELECTOR_ICON_X, 37 + k*27);
 
 					pt = file_list[m];
 				}
 
-				draw_hscroll_init(down_screen_addr, 41, 40 + k*27, 185, 
+				draw_hscroll_init(down_screen_addr, FILE_SELECTOR_NAME_X, 40 + k*27, FILE_SELECTOR_NAME_SX, 
 					COLOR_TRANS, color, pt);
 			}
 
@@ -1221,11 +1236,11 @@ s32 load_file(char **wildcards, char *result, char *default_dir_name)
 				pt= strrchr(file_list[n], '.');
 
 				if(!strcasecmp(pt, ".zip") || !strcasecmp(pt, ".gz"))
-					show_icon(down_screen_addr, &ICON_ZIPFILE, 17, 37 + m*27);
+					show_icon(down_screen_addr, &ICON_ZIPFILE, FILE_SELECTOR_ICON_X, 37 + m*27);
 				else if(!strcasecmp(file_list[m], ".."))
-					show_icon(down_screen_addr, &ICON_DOTDIR, 17, 37 + m*27);
+					show_icon(down_screen_addr, &ICON_DOTDIR, FILE_SELECTOR_ICON_X, 37 + m*27);
 				else //Not recoganized file
-					show_icon(down_screen_addr, &ICON_UNKNOW, 17, 37 + m*27);
+					show_icon(down_screen_addr, &ICON_UNKNOW, FILE_SELECTOR_ICON_X, 37 + m*27);
 			}
 
 			draw_hscroll(m+1, redraw);
@@ -1851,7 +1866,7 @@ u32 menu()
 					else
 						color= COLOR_INACTIVE_ITEM;
 	
-					PRINT_STRING_BG(down_screen_addr, line_buffer, color, COLOR_TRANS, 23, 40 + i*27);
+					PRINT_STRING_BG(down_screen_addr, line_buffer, color, COLOR_TRANS, OPTION_TEXT_X, 40 + i*27);
 				}
     	    }
     	}
@@ -2128,10 +2143,98 @@ int load_language_msg(char *filename, u32 language)
 		if(!strncmp(pt, end, cmplen-2))
 			break;
 
-		len= strlen(pt);
-		memcpy(dst, pt, len);
 
-		dst += len;
+		len= strlen(pt);
+		// memcpy(dst, pt, len);
+
+		// Replace key definitions (*letter) with Pictochat icons
+		// while copying.
+		unsigned int srcChar, dstLen = 0;
+		for (srcChar = 0; srcChar < len; srcChar++)
+		{
+			if (pt[srcChar] == '*')
+			{
+				switch (pt[srcChar + 1])
+				{
+				case 'A':
+					memcpy(&dst[dstLen], HOTKEY_A_DISPLAY, sizeof (HOTKEY_A_DISPLAY) - 1);
+					srcChar++;
+					dstLen += sizeof (HOTKEY_A_DISPLAY) - 1;
+					break;
+				case 'B':
+					memcpy(&dst[dstLen], HOTKEY_B_DISPLAY, sizeof (HOTKEY_B_DISPLAY) - 1);
+					srcChar++;
+					dstLen += sizeof (HOTKEY_B_DISPLAY) - 1;
+					break;
+				case 'X':
+					memcpy(&dst[dstLen], HOTKEY_X_DISPLAY, sizeof (HOTKEY_X_DISPLAY) - 1);
+					srcChar++;
+					dstLen += sizeof (HOTKEY_X_DISPLAY) - 1;
+					break;
+				case 'Y':
+					memcpy(&dst[dstLen], HOTKEY_Y_DISPLAY, sizeof (HOTKEY_Y_DISPLAY) - 1);
+					srcChar++;
+					dstLen += sizeof (HOTKEY_Y_DISPLAY) - 1;
+					break;
+				case 'L':
+					memcpy(&dst[dstLen], HOTKEY_L_DISPLAY, sizeof (HOTKEY_L_DISPLAY) - 1);
+					srcChar++;
+					dstLen += sizeof (HOTKEY_L_DISPLAY) - 1;
+					break;
+				case 'R':
+					memcpy(&dst[dstLen], HOTKEY_R_DISPLAY, sizeof (HOTKEY_R_DISPLAY) - 1);
+					srcChar++;
+					dstLen += sizeof (HOTKEY_R_DISPLAY) - 1;
+					break;
+				case 'S':
+					memcpy(&dst[dstLen], HOTKEY_START_DISPLAY, sizeof (HOTKEY_START_DISPLAY) - 1);
+					srcChar++;
+					dstLen += sizeof (HOTKEY_START_DISPLAY) - 1;
+					break;
+				case 's':
+					memcpy(&dst[dstLen], HOTKEY_SELECT_DISPLAY, sizeof (HOTKEY_SELECT_DISPLAY) - 1);
+					srcChar++;
+					dstLen += sizeof (HOTKEY_SELECT_DISPLAY) - 1;
+					break;
+				case 'u':
+					memcpy(&dst[dstLen], HOTKEY_UP_DISPLAY, sizeof (HOTKEY_UP_DISPLAY) - 1);
+					srcChar++;
+					dstLen += sizeof (HOTKEY_UP_DISPLAY) - 1;
+					break;
+				case 'd':
+					memcpy(&dst[dstLen], HOTKEY_DOWN_DISPLAY, sizeof (HOTKEY_DOWN_DISPLAY) - 1);
+					srcChar++;
+					dstLen += sizeof (HOTKEY_DOWN_DISPLAY) - 1;
+					break;
+				case 'l':
+					memcpy(&dst[dstLen], HOTKEY_LEFT_DISPLAY, sizeof (HOTKEY_LEFT_DISPLAY) - 1);
+					srcChar++;
+					dstLen += sizeof (HOTKEY_LEFT_DISPLAY) - 1;
+					break;
+				case 'r':
+					memcpy(&dst[dstLen], HOTKEY_RIGHT_DISPLAY, sizeof (HOTKEY_RIGHT_DISPLAY) - 1);
+					srcChar++;
+					dstLen += sizeof (HOTKEY_RIGHT_DISPLAY) - 1;
+					break;
+				case '\0':
+					dst[dstLen] = pt[srcChar];
+					dstLen++;
+					break;
+				default:
+					memcpy(&dst[dstLen], &pt[srcChar], 2);
+					srcChar++;
+					dstLen += 2;
+					break;
+				}
+			}
+			else
+			{
+				dst[dstLen] = pt[srcChar];
+				dstLen++;
+			}
+		}
+
+		dst += dstLen;
 		//at a line return, when "\n" paded, this message not end
 		if(*(dst-1) == 0x0A)
 		{
@@ -2152,7 +2255,7 @@ int load_language_msg(char *filename, u32 language)
 			else//a message end
 			{
 				if(*(dst-2) == 0x0D)
-				dst -= 1;
+					dst -= 1;
 				*(dst-1) = '\0';
 				msg[++loop] = dst;
 			}

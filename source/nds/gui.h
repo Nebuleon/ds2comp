@@ -26,6 +26,15 @@
 #define UP_SCREEN_UPDATE_METHOD   2
 #define DOWN_SCREEN_UPDATE_METHOD 2
 
+// For general option text
+#define OPTION_TEXT_X             10
+#define OPTION_TEXT_SX            236
+
+// For the file selector
+#define FILE_SELECTOR_ICON_X      10
+#define FILE_SELECTOR_NAME_X      32
+#define FILE_SELECTOR_NAME_SX     214
+
 #ifdef __cplusplus
 extern "C" {
 #endif
