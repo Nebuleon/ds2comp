@@ -3,9 +3,9 @@
 #include "ds2io.h"
 #include "gui.h"
 
-int sfc_main (int argc, char **argv);
+int ds2compress_main (int argc, char **argv);
 
-int sfc_main (int argc, char **argv)
+int ds2compress_main (int argc, char **argv)
 {
 	//Initialize GUI
 	gui_init(0);

@@ -28,7 +28,7 @@
 #define BLACK_COLOR		RGB15(0, 0, 0)
 #define WHITE_COLOR		RGB15(31, 31, 31)
 
-extern int sfc_main (int argc, char **argv);
+extern int ds2compress_main (int argc, char **argv);
 
 #if 0
 void ddump_mem(unsigned char* addr, unsigned int len)
@@ -56,7 +56,7 @@ void ds2_main(void)
 	if(err) goto _failure;
 
 	//go to user main funtion
-	sfc_main (0, 0);
+	ds2compress_main (0, 0);
 
 _failure:
 	ds2_plug_exit();
