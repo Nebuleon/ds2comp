@@ -1,4 +1,4 @@
-DS2Compress version 0.50, 2013-02-01
+DS2Compress version 0.60, 2013-02-23
 
 A fast gzip compressor and decompressor for the Supercard DSTWO.
 

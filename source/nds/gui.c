@@ -51,7 +51,7 @@ char *language_options[] = { (char *) &lang[0], (char *) &lang[1] };
 /******************************************************************************
 *	Macro definition
  ******************************************************************************/
-#define DS2COMP_VERSION "0.50"
+#define DS2COMP_VERSION "0.60"
 
 #define LANGUAGE_PACK   "SYSTEM/language.msg"
 #define APPLICATION_CONFIG_FILENAME "SYSTEM/ds2comp.cfg"
