@@ -137,7 +137,7 @@ int ZipUncompress(file)
         char outfile[MAX_PATH + 1];
         strcpy(outfile, Path);
         strcat(outfile, "/");
-        strcat(outfile, Filename);
+        strcat(outfile, Filename); // buffer overflow possible
         // 2. Check whether the file exists.
         unsigned int FileExists = 0;
         FILE *outCheck = fopen(outfile, "rb");
@@ -181,15 +181,32 @@ int ZipUncompress(file)
             }
         }
 
-        
-        // 3. Open the output file.
+        // 3. Make missing parent directories.
+        // Assume the directory containing the .zip archive exists.
+        unsigned int DirLen = 0;
+        while (Filename[DirLen]) {
+            if (Filename[DirLen] == '/') { // Found a new path component
+                char IntermediatePath[MAX_PATH + 1];
+                strcpy(IntermediatePath, Path);
+                strcat(IntermediatePath, "/");
+                Filename[DirLen] = '\0';
+                strcat(IntermediatePath, Filename); // buffer overflow possible
+                Filename[DirLen] = '/';
+                DIR *IntermediateDir = opendir(IntermediatePath);
+                if (IntermediateDir)
+                    closedir(IntermediateDir);
+                else
+                    mkdir(IntermediatePath);
+            }
+            DirLen++;
+        }
+
+        // 4. Open the output file.
         out = fopen(outfile, "wb");
         if (out == NULL) {
             unzClose(in);
             return error(msg[MSG_ERROR_OUTPUT_FILE_OPEN]) != DS2COMP_RETRY;
         }
-
-        // TODO Make directories if they don't exist
 
         if (unzOpenCurrentFile(in) != UNZ_OK) {
             unzClose(in);
@@ -200,7 +217,7 @@ int ZipUncompress(file)
         local char buf[DECOMPRESSION_BUFFER_SIZE];
         int len;
 
-        // 4. Unpack into the output file. Update progress accordingly.
+        // 5. Unpack into the output file. Update progress accordingly.
         for (;;) {
             len = unzReadCurrentFile(in, buf, sizeof(buf));
             if (len < 0) {
