@@ -196,7 +196,7 @@ int ZipUncompress(file)
                 if (IntermediateDir)
                     closedir(IntermediateDir);
                 else
-                    mkdir(IntermediatePath);
+                    mkdir(IntermediatePath, 0755);
             }
             DirLen++;
         }
