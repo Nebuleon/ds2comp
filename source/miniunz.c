@@ -66,8 +66,8 @@
 #endif
 #define SUFFIX_LEN (sizeof(GZ_SUFFIX)-1)
 
-#define BUFLEN      16384
-#define MAX_NAME_LEN 1024
+#define DECOMPRESSION_BUFFER_SIZE 131072
+#define MAX_NAME_LEN                1024
 
 #include "gui.h"
 #include "draw.h"
@@ -193,7 +193,7 @@ int ZipUncompress(file)
             return error(msg[MSG_ERROR_COMPRESSED_FILE_READ]) != DS2COMP_RETRY;
         }
 
-        local char buf[BUFLEN];
+        local char buf[DECOMPRESSION_BUFFER_SIZE];
         int len;
 
         // 4. Unpack into the output file. Update progress accordingly.

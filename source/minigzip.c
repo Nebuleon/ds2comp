@@ -64,8 +64,9 @@
 #endif
 #define SUFFIX_LEN (sizeof(GZ_SUFFIX)-1)
 
-#define BUFLEN      16384
-#define MAX_NAME_LEN 1024
+#define COMPRESSION_BUFFER_SIZE    16384
+#define DECOMPRESSION_BUFFER_SIZE 131072
+#define MAX_NAME_LEN                1024
 
 #include "gui.h"
 #include "draw.h"
@@ -103,7 +104,7 @@ int gz_compress(in, out)
     FILE   *in;
     gzFile out;
 {
-    local char buf[BUFLEN];
+    local char buf[COMPRESSION_BUFFER_SIZE];
     int len;
     int err;
 
@@ -148,7 +149,7 @@ int gz_uncompress(in, out)
     gzFile in;
     FILE   *out;
 {
-    local char buf[BUFLEN];
+    local char buf[DECOMPRESSION_BUFFER_SIZE];
     int len;
     int err;
 
