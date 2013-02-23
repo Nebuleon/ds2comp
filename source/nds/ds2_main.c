@@ -47,7 +47,7 @@ void ds2_main(void)
 {
 	int err;
 	ds2_setCPUclocklevel(13);
-	//Initial video and audio and other input and output
+	//Initial video and other input and output
 	err = ds2io_init(1024);
 	if(err) goto _failure;
 

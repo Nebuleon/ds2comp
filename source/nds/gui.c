@@ -384,9 +384,10 @@ void InitProgressMultiFile (char *Action, char *Filename, unsigned int TotalFile
     ProgressTotalFiles = TotalFiles;
 }
 
-void UpdateProgressChangeFile (unsigned int CurrentFile, unsigned int TotalSize)
+void UpdateProgressChangeFile (unsigned int CurrentFile, char *Filename, unsigned int TotalSize)
 {
     ProgressCurrentFile = CurrentFile;
+    strcpy(ProgressFilename, Filename);
     ProgressTotalSize = TotalSize;
     LastProgressUpdateTime = 0; // force an update when changing files
     // if this is too slow, move it to InitProgressMultiFile above

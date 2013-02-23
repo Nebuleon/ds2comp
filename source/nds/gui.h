@@ -84,7 +84,7 @@ extern void FiniMessage (void);
 extern void InitProgress (char *Action, char *Filename, unsigned int TotalSize);
 extern void UpdateProgress (unsigned int DoneSize);
 extern void InitProgressMultiFile (char *Action, char *Filename, unsigned int TotalFiles);
-extern void UpdateProgressChangeFile (unsigned int CurrentFile, unsigned int TotalSize);
+extern void UpdateProgressChangeFile (unsigned int CurrentFile, char *Filename, unsigned int TotalSize);
 extern void UpdateProgressMultiFile (unsigned int DoneSize);
 extern unsigned int ReadInputDuringCompression ();
 

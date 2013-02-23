@@ -128,7 +128,7 @@ int ZipUncompress(file)
             unzClose(in);
             return error(msg[MSG_ERROR_COMPRESSED_FILE_READ]) != DS2COMP_RETRY;
         }
-        UpdateProgressChangeFile(++CurrentFile, file_info.uncompressed_size);
+        UpdateProgressChangeFile(++CurrentFile, Filename, file_info.uncompressed_size);
 
         char outfile[MAX_PATH + 1];
         strcpy(outfile, Path);
