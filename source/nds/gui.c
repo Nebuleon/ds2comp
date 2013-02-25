@@ -434,7 +434,8 @@ void UpdateProgressMultiFile (unsigned int DoneSize)
 
     unsigned int Now = getSysTime();
     if (Now - LastProgressUpdateTime >= 5859 /* 250 milliseconds in 42.667 us units */
-        || ProgressDoneSize == ProgressTotalSize /* force update if done */)
+        || ((ProgressDoneSize == ProgressTotalSize)
+         && (ProgressCurrentFile == ProgressTotalFiles)) /* force update if done */)
     {
         LastProgressUpdateTime = Now;
         // If you want to add skinning support for the upper screen, edit this.
