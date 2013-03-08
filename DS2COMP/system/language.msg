@@ -186,3 +186,82 @@ Impossible d'écrire complètement le fichier de destination. Vérifiez que la c
 *B Annuler
 
 ENDFRENCH
+
+STARTSPANISH
+
+#MSG_MAIN_MENU_COMPRESS
+Comprimir
+#MSG_MAIN_MENU_DECOMPRESS
+Descomprimir
+#MSG_MAIN_MENU_OPTIONS
+Opciones
+#MSG_MAIN_MENU_EXIT
+Salir
+#FMT_OPTIONS_COMPRESSION_LEVEL
+Nivel de compresión              %d
+#FMT_OPTIONS_LANGUAGE
+Idioma                                     %s
+#MSG_OPTIONS_CARD_CAPACITY
+Espacio libre
+#MSG_OPTIONS_RESET
+Restaurar valores iniciales
+#MSG_OPTIONS_VERSION
+Información de versión
+#MSG_GENERAL_OFF
+No
+#MSG_GENERAL_ON
+Sí
+#MSG_GENERAL_CONFIRM_WITH_A
+*A Confirmar
+#MSG_GENERAL_CANCEL_WITH_B
+*B Cancelar
+#MSG_GENERAL_YES_WITH_A
+*A Sí
+#MSG_GENERAL_NO_WITH_B
+*B No
+#MSG_CHANGE_LANGUAGE
+Cambiando idioma...
+#MSG_CHANGE_LANGUAGE_WAITING
+Espere...
+#MSG_APPLICATION_NAME
+DS2Compress gestor de archivos gzip
+#MSG_WORD_APPLICATION_VERSION
+Versión
+#MSG_DIALOG_RESET
+¿Recuperar los valores iniciales?
+#MSG_PROGRESS_RESETTING
+Espere...
+#MSG_DIALOG_OVERWRITE_EXISTING_FILE
+  El fichero de destino ya existe.            ¿Sobrescribirlo?
+#MSG_DIALOG_OVERWRITE_ALL_FILES
+ ¿Desea sobrescribir todos los demás   ficheros de este archivo .zip?
+#MSG_DIALOG_LEAVE_ALL_FILES
+ ¿Desea dejar intactos todos los          demás ficheros de este archivo .zip?
+#MSG_FILE_OVERWRITE_WITH_A
+*A Sobrescribir
+#MSG_FILE_LEAVE_WITH_B
+*B Abandonar
+#MSG_PROGRESS_COMPRESSING
+Comprimiendo...
+#MSG_PROGRESS_DECOMPRESSING
+Decomprimiendo...
+#MSG_PROGRESS_KIBIBYTE_COUNT
+%d de %d KiB
+#MSG_PROGRESS_ARCHIVE_MEMBER_AND_KIBIBYTE_COUNT
+Fichero %d de %d  -  %d de %d KiB
+#MSG_PROGRESS_CANCEL_WITH_B
+*B para cancelar
+#MSG_ERROR_INPUT_FILE_READ
+  Fallo al leer algún fichero de origen.  Compruebe que la tarjeta está bien   introducida.
+#MSG_ERROR_COMPRESSED_FILE_READ
+  Fallo al leer el fichero comprimido.      Puede estar corrupto. Compruebe      que la tarjeta está introducida.
+#MSG_ERROR_OUTPUT_FILE_OPEN
+  Fallo al crear el fichero de destino.    Puede ser falta de espacio, nombre    muy largo, directorio con igual            nombre o 512 elementos en la raiz.
+#MSG_ERROR_OUTPUT_FILE_WRITE
+  Fallo de escritura del fichero.             Compruebe que la tarjeta está bien   introducida y con suficiente espacio   libre.
+#MSG_ERROR_RETRY_WITH_A
+*A Reintentar
+#MSG_ERROR_ABORT_WITH_B
+*B Abortar
+
+ENDSPANISH
