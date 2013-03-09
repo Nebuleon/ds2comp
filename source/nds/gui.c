@@ -1477,13 +1477,13 @@ u32 menu()
             bg_screenp_color = COLOR_BG;
 
         draw_message(down_screen_addr, bg_screenp, 28, 31, 227, 165, bg_screenp_color);
-        draw_string_vcenter(down_screen_addr, 36, 70, 190, COLOR_MSSG, msg[MSG_DIALOG_RESET]);
+        draw_string_vcenter(down_screen_addr, 20, 54, 221, COLOR_MSSG, msg[MSG_DIALOG_RESET]);
 
         if(draw_yesno_dialog(DOWN_SCREEN, 115, msg[MSG_GENERAL_CONFIRM_WITH_A], msg[MSG_GENERAL_CANCEL_WITH_B]))
         {
 		wait_Allkey_release(0);
             draw_message(down_screen_addr, bg_screenp, 28, 31, 227, 165, bg_screenp_color);
-            draw_string_vcenter(down_screen_addr, 36, 80, 190, COLOR_MSSG, msg[MSG_PROGRESS_RESETTING]);
+            draw_string_vcenter(down_screen_addr, 20, 64, 221, COLOR_MSSG, msg[MSG_PROGRESS_RESETTING]);
             ds2_flipScreen(DOWN_SCREEN, DOWN_SCREEN_UPDATE_METHOD);
 
             sprintf(line_buffer, "%s/%s", main_path, APPLICATION_CONFIG_FILENAME);
@@ -1509,9 +1509,9 @@ u32 menu()
             bg_screenp_color = COLOR_BG;
 
         draw_message(down_screen_addr, bg_screenp, 28, 31, 227, 165, bg_screenp_color);
-        draw_string_vcenter(down_screen_addr, 36, 80, 190, COLOR_MSSG, msg[MSG_APPLICATION_NAME]);
+        draw_string_vcenter(down_screen_addr, 20, 64, 221, COLOR_MSSG, msg[MSG_APPLICATION_NAME]);
         sprintf(line_buffer, "%s %s", msg[MSG_WORD_APPLICATION_VERSION], DS2COMP_VERSION);
-        draw_string_vcenter(down_screen_addr, 36, 95, 190, COLOR_MSSG, line_buffer);
+        draw_string_vcenter(down_screen_addr, 20, 79, 221, COLOR_MSSG, line_buffer);
         ds2_flipScreen(DOWN_SCREEN, DOWN_SCREEN_UPDATE_METHOD);
 
 		wait_Anykey_press(0);
@@ -1531,8 +1531,8 @@ u32 menu()
                 bg_screenp_color = COLOR_BG;
 
             draw_message(down_screen_addr, bg_screenp, 28, 31, 227, 165, bg_screenp_color);
-            draw_string_vcenter(down_screen_addr, 36, 75, 190, COLOR_MSSG, msg[MSG_CHANGE_LANGUAGE]);
-            draw_string_vcenter(down_screen_addr, 36, 95, 190, COLOR_MSSG, msg[MSG_CHANGE_LANGUAGE_WAITING]);
+            draw_string_vcenter(down_screen_addr, 20, 59, 221, COLOR_MSSG, msg[MSG_CHANGE_LANGUAGE]);
+            draw_string_vcenter(down_screen_addr, 20, 79, 221, COLOR_MSSG, msg[MSG_CHANGE_LANGUAGE_WAITING]);
             ds2_flipScreen(DOWN_SCREEN, DOWN_SCREEN_UPDATE_METHOD);
 
             load_language_msg(LANGUAGE_PACK, application_config.language);

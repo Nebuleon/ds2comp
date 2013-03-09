@@ -93,8 +93,8 @@ struct gui_iconlist gui_icon_list[]= {
 	/* 18 */ {"fdoto", 16, 16, NULL},
 	/* 19 */ {"backo", 19, 13, NULL},
 	/* 20 */ {"nbacko", 19, 13, NULL},
-	/* 21 */ {"smsgfr", 193, 111, NULL},
-	/* 22 */ {"sbutto", 76, 16, NULL},
+	/* 21 */ {"smsgfr", 224, 142, NULL},
+	/* 22 */ {"sbutto", 92, 16, NULL},
 	/* 23 */ {"sprog", 256, 32, NULL},
 	/* 24 */ {"snprog", 256, 32, NULL}
                         };
@@ -291,7 +291,7 @@ void draw_message(void* screen_addr, u16 *screen_bg, u32 sx, u32 sy, u32 ex, u32
     {
 //        drawbox(screen_addr, sx, sy, ex, ey, COLOR16(12, 12, 12));
 //        drawboxfill(screen_addr, sx+1, sy+1, ex-1, ey-1, color_fg);
-		show_icon(screen_addr, &ICON_MSG, 34, 48);
+		show_icon(screen_addr, &ICON_MSG, (NDS_SCREEN_WIDTH - ICON_MSG.x) / 2, (NDS_SCREEN_HEIGHT - ICON_MSG.y) / 2);
     }
     else
     {
@@ -780,13 +780,16 @@ u32 draw_yesno_dialog(enum SCREEN_ID screen, u32 sy, char *yes, char *no)
 	else
 		screen_addr = down_screen_addr;
 
-    i= SCREEN_WIDTH/2 - box_width - 2;
-	show_icon((unsigned short*)screen_addr, &ICON_BUTTON, 49, 128);
-    draw_string_vcenter((unsigned short*)screen_addr, 51, 130, 73, COLOR_WHITE, yes);
+	sy = (NDS_SCREEN_HEIGHT + ICON_MSG.y) / 2 - 8 - ICON_BUTTON.y;
 
-    i= SCREEN_WIDTH/2 + 3;
-	show_icon((unsigned short*)screen_addr, &ICON_BUTTON, 136, 128);
-    draw_string_vcenter((unsigned short*)screen_addr, 138, 130, 73, COLOR_WHITE, no);
+	u32 left_sx = NDS_SCREEN_WIDTH / 2 - 8 - ICON_BUTTON.x,
+	    right_sx = NDS_SCREEN_WIDTH / 2 + 8;
+
+	show_icon((unsigned short*)screen_addr, &ICON_BUTTON, left_sx, sy);
+    draw_string_vcenter((unsigned short*)screen_addr, left_sx + 2, sy, ICON_BUTTON.x - 4, COLOR_WHITE, yes);
+
+	show_icon((unsigned short*)screen_addr, &ICON_BUTTON, right_sx, sy);
+    draw_string_vcenter((unsigned short*)screen_addr, right_sx + 2, sy, ICON_BUTTON.x - 4, COLOR_WHITE, no);
 
 	ds2_flipScreen(screen, 2);
 
@@ -799,11 +802,11 @@ u32 draw_yesno_dialog(enum SCREEN_ID screen, u32 sy, char *yes, char *no)
 		struct key_buf inputdata;
 		ds2_getrawInput(&inputdata);
 		// Turn it into a SELECT (A) or BACK (B) if the button is touched.
-		if (inputdata.y >= 128 && inputdata.y < 128 + ICON_BUTTON.y)
+		if (inputdata.y >= sy && inputdata.y < sy + ICON_BUTTON.y)
 		{
-			if (inputdata.x >= 49 && inputdata.x < 49 + ICON_BUTTON.x)
+			if (inputdata.x >= left_sx && inputdata.x < left_sx + ICON_BUTTON.x)
 				gui_action = CURSOR_SELECT;
-			else if (inputdata.x >= 136 && inputdata.x < 136 + ICON_BUTTON.x)
+			else if (inputdata.x >= right_sx && inputdata.x < right_sx + ICON_BUTTON.x)
 				gui_action = CURSOR_BACK;
 		}
 	}
