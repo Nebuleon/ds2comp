@@ -265,3 +265,82 @@ Fichero %d de %d  -  %d de %d KiB
 *B Abortar
 
 ENDSPANISH
+
+STARTGERMAN
+
+#MSG_MAIN_MENU_COMPRESS
+Komprimieren
+#MSG_MAIN_MENU_DECOMPRESS
+Entpacken
+#MSG_MAIN_MENU_OPTIONS
+Optionen
+#MSG_MAIN_MENU_EXIT
+Beenden
+#FMT_OPTIONS_COMPRESSION_LEVEL
+Komprimierungslevel            %d
+#FMT_OPTIONS_LANGUAGE
+Sprache                          %s
+#MSG_OPTIONS_CARD_CAPACITY
+Speicherkapazität
+#MSG_OPTIONS_RESET
+Werkseinstellungen
+#MSG_OPTIONS_VERSION
+Versionsinformation
+#MSG_GENERAL_OFF
+Aus
+#MSG_GENERAL_ON
+An
+#MSG_GENERAL_CONFIRM_WITH_A
+*A Bestätigen
+#MSG_GENERAL_CANCEL_WITH_B
+*B Abbrechen
+#MSG_GENERAL_YES_WITH_A
+*A Ja
+#MSG_GENERAL_NO_WITH_B
+*B Nein
+#MSG_CHANGE_LANGUAGE
+Sprache ändern...
+#MSG_CHANGE_LANGUAGE_WAITING
+Bitte warten...
+#MSG_APPLICATION_NAME
+DS2Compress gzip Datei-Handle
+#MSG_WORD_APPLICATION_VERSION
+Version
+#MSG_DIALOG_RESET
+Einstellungen zurücksetzen?
+#MSG_PROGRESS_RESETTING
+Bitte warten...
+#MSG_DIALOG_OVERWRITE_EXISTING_FILE
+Die Zieldatei besteht bereits - überschreiben?
+#MSG_DIALOG_OVERWRITE_ALL_FILES
+Zusätzlich alle bestehenden Dateien für dieses .zip Archiv überschreiben?
+#MSG_DIALOG_LEAVE_ALL_FILES
+Zusätzlich alle bestehenden Dateien für dieses .zip Archiv beibehalten?
+#MSG_FILE_OVERWRITE_WITH_A
+*A Überschreiben
+#MSG_FILE_LEAVE_WITH_B
+*B Abbrechen
+#MSG_PROGRESS_COMPRESSING
+Komprimiere...
+#MSG_PROGRESS_DECOMPRESSING
+Entpacke...
+#MSG_PROGRESS_KIBIBYTE_COUNT
+%d von %d KiB
+#MSG_PROGRESS_ARCHIVE_MEMBER_AND_KIBIBYTE_COUNT
+Datei %d von %d  -  %d von %d KiB
+#MSG_PROGRESS_CANCEL_WITH_B
+*B Abbrechen
+#MSG_ERROR_INPUT_FILE_READ
+Fehler beim Lesen der Datei. Bitte die Karte überprüfen.
+#MSG_ERROR_COMPRESSED_FILE_READ
+Fehler beim Lesen der komprimierten Datei. Sie ist möglicherweise korrupt, bitte die Karte überprüfen.
+#MSG_ERROR_OUTPUT_FILE_OPEN
+Fehler beim Erstellen der Zieldatei. Entweder ist kein Platz vorhanden, die Datei existiert bereits, der Name ist zu lang oder im Hauptverzeichnis liegen 512 Dateien.
+#MSG_ERROR_OUTPUT_FILE_WRITE
+Fehler beim Erstellen der Zieldatei. Bitte die Karte überprüfen und sicherstellen, dass genug Platz vorhanden ist.
+#MSG_ERROR_RETRY_WITH_A
+*A Wiederholen
+#MSG_ERROR_ABORT_WITH_B
+*B Abbruch
+
+ENDGERMAN
