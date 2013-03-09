@@ -2105,6 +2105,14 @@ int load_language_msg(char *filename, u32 language)
 		strcpy(start, "STARTFRENCH");
 		strcpy(end, "ENDFRENCH");
 		break;
+	case SPANISH:
+		strcpy(start, "STARTSPANISH");
+		strcpy(end, "ENDSPANISH");
+		break;
+	case GERMAN:
+		strcpy(start, "STARTGERMAN");
+		strcpy(end, "ENDGERMAN");
+		break;
 	}
 	u32 cmplen = strlen(start);
 
