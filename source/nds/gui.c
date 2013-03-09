@@ -40,13 +40,15 @@ char	gamepak_name[MAX_PATH];
 
 // If adding a language, make sure you update the size of the array in
 // message.h too.
-char *lang[2] =
+char *lang[4] =
 	{ 
 		"English",					// 0
 		"Français",					// 1
+		"Español",					// 2
+		"Deutsch",					// 3
 	};
 
-char *language_options[] = { (char *) &lang[0], (char *) &lang[1] };
+char *language_options[] = { (char *) &lang[0], (char *) &lang[1], (char *) &lang[2], (char *) &lang[3] };
 
 /******************************************************************************
 *	Macro definition
