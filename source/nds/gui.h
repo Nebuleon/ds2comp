@@ -30,6 +30,12 @@
 #define OPTION_TEXT_X             10
 #define OPTION_TEXT_SX            236
 
+// For message boxes
+#define MESSAGE_BOX_TEXT_X        ((NDS_SCREEN_WIDTH - ICON_MSG.x) / 2 + 3)
+#define MESSAGE_BOX_TEXT_SX       (ICON_MSG.x - 6)
+// Y is brought down by the "window title" that's part of ICON_MSG
+#define MESSAGE_BOX_TEXT_Y        ((NDS_SCREEN_HEIGHT - ICON_MSG.y) / 2 + 24)
+
 // For the file selector
 #define FILE_SELECTOR_ICON_X      10
 #define FILE_SELECTOR_NAME_X      32

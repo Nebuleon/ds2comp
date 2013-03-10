@@ -158,7 +158,7 @@ int ZipUncompress(file)
         {
             // This file already exists. Overwrite it?
             InitMessage ();
-            draw_string_vcenter(down_screen_addr, 20, 54, 221, COLOR_MSSG, msg[MSG_DIALOG_OVERWRITE_EXISTING_FILE]);
+            draw_string_vcenter(down_screen_addr, MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, msg[MSG_DIALOG_OVERWRITE_EXISTING_FILE]);
 
             u32 OverwriteCurrentFile = draw_yesno_dialog(DOWN_SCREEN, 115, msg[MSG_FILE_OVERWRITE_WITH_A], msg[MSG_FILE_LEAVE_WITH_B]);
             FiniMessage ();
@@ -168,10 +168,10 @@ int ZipUncompress(file)
                 // for this .zip archive?
                 InitMessage ();
                 if (OverwriteCurrentFile) {
-                    draw_string_vcenter(down_screen_addr, 20, 54, 221, COLOR_MSSG, msg[MSG_DIALOG_OVERWRITE_ALL_FILES]);
+                    draw_string_vcenter(down_screen_addr, MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, msg[MSG_DIALOG_OVERWRITE_ALL_FILES]);
                     OverwriteAllFiles = draw_yesno_dialog(DOWN_SCREEN, 115, msg[MSG_GENERAL_YES_WITH_A], msg[MSG_GENERAL_NO_WITH_B]);
                 } else {
-                    draw_string_vcenter(down_screen_addr, 20, 54, 221, COLOR_MSSG, msg[MSG_DIALOG_LEAVE_ALL_FILES]);
+                    draw_string_vcenter(down_screen_addr, MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, msg[MSG_DIALOG_LEAVE_ALL_FILES]);
                     LeaveAllFiles = draw_yesno_dialog(DOWN_SCREEN, 115, msg[MSG_GENERAL_YES_WITH_A], msg[MSG_GENERAL_NO_WITH_B]);
                 }
                 FiniMessage ();

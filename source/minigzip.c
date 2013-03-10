@@ -86,7 +86,7 @@ int error(message)
     char *message;
 {
     InitMessage ();
-    draw_string_vcenter(down_screen_addr, 20, 54, 221, COLOR_MSSG, message);
+    draw_string_vcenter(down_screen_addr, MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, message);
 
     u32 result = draw_yesno_dialog(DOWN_SCREEN, 115, msg[MSG_ERROR_RETRY_WITH_A], msg[MSG_ERROR_ABORT_WITH_B]);
     FiniMessage ();
@@ -222,7 +222,7 @@ int GzipCompress(file, level)
             // overwrite it.
             fclose(outCheck);  // ... after closing it
             InitMessage ();
-            draw_string_vcenter(down_screen_addr, 20, 54, 221, COLOR_MSSG, msg[MSG_DIALOG_OVERWRITE_EXISTING_FILE]);
+            draw_string_vcenter(down_screen_addr, MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, msg[MSG_DIALOG_OVERWRITE_EXISTING_FILE]);
 
             u32 result = draw_yesno_dialog(DOWN_SCREEN, 115, msg[MSG_FILE_OVERWRITE_WITH_A], msg[MSG_FILE_LEAVE_WITH_B]);
             FiniMessage ();
@@ -294,7 +294,7 @@ int GzipDecompress(file)
             // to overwrite it.
             fclose(outCheck);  // ... after closing it
             InitMessage ();
-            draw_string_vcenter(down_screen_addr, 20, 54, 221, COLOR_MSSG, msg[MSG_DIALOG_OVERWRITE_EXISTING_FILE]);
+            draw_string_vcenter(down_screen_addr, MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, msg[MSG_DIALOG_OVERWRITE_EXISTING_FILE]);
 
             u32 result = draw_yesno_dialog(DOWN_SCREEN, 115, msg[MSG_FILE_OVERWRITE_WITH_A], msg[MSG_FILE_LEAVE_WITH_B]);
             FiniMessage ();

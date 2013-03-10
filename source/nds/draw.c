@@ -337,28 +337,26 @@ void draw_string_vcenter(void* screen_addr, u32 sx, u32 sy, u32 width, u32 color
     while(*string)
     {
         string= utf8decode(string, unicode+num);
-        if(unicode[num] != 0x0D && unicode[num] != 0x0A) num++;
+        num++;
     }
 
     if(num== 0) return;
-
-    i= BDF_cut_unicode(unicode, num, width, 1);
-    if(i == num)
-    {
-        x= BDF_cut_unicode(unicode, num, 0, 3);
-        sx += (width - x)/2;
-    }
 
     screenp = (unsigned short*)screen_addr + sx + sy*SCREEN_WIDTH;
     i= 0;
     while(i < num)
     {
         m= BDF_cut_unicode(&unicode[i], num-i, width, 1);
-        x= 0;
+        x= (width - BDF_cut_unicode(&unicode[i], m, 0, 3)) / 2;
         while(m--)
         {
             x += BDF_render16_ucs(screenp+x, SCREEN_WIDTH, 0, COLOR_TRANS, 
                 color_fg, unicode[i++]);
+        }
+        if (i < num && (unicode[i] == 0x0D || unicode[i] == 0x0A))
+            i++;
+	else {
+            while (i < num && (unicode[i] == ' ')) i++;
         }
         screenp += FONTS_HEIGHT * SCREEN_WIDTH;
     }
