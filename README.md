@@ -1,4 +1,4 @@
-DS2Compress version 0.60, 2013-02-23
+DS2Compress version 0.61, 2013-03-10
 
 A fast gzip compressor and decompressor for the Supercard DSTWO.
 
@@ -13,8 +13,6 @@ Based on:
   **from .zip files, or uncompress .gz files that have no extension before**
   **.gz. They corrupt the filesystem and crash applications that read your**
   **storage card!**
-* **Do not unpack .zip files that contain folders. The folders will not be**
-  **created, and every file will fail to be unpacked.**
 * **Unpacking some files creates a phantom file beside the real one. In**
   **certain circumstances, these phantom files may cause your computer to**
   **ask you to reformat your storage card. Do not reformat your card! In**
