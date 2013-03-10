@@ -279,7 +279,7 @@ Beenden
 #FMT_OPTIONS_COMPRESSION_LEVEL
 Komprimierungslevel            %d
 #FMT_OPTIONS_LANGUAGE
-Sprache                          %s
+Sprache                                 %s
 #MSG_OPTIONS_CARD_CAPACITY
 Speicherkapazität
 #MSG_OPTIONS_RESET
