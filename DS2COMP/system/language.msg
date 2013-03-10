@@ -232,11 +232,11 @@ Versión
 #MSG_PROGRESS_RESETTING
 Espere...
 #MSG_DIALOG_OVERWRITE_EXISTING_FILE
-  El fichero de destino ya existe.                      ¿Sobrescribirlo?
+El fichero de destino ya existe. ¿Sobrescribirlo?
 #MSG_DIALOG_OVERWRITE_ALL_FILES
-  ¿Desea sobrescribir todos los demás              ficheros de este archivo .zip?
+¿Desea sobrescribir todos los demás ficheros de este archivo .zip?
 #MSG_DIALOG_LEAVE_ALL_FILES
-  ¿Desea dejar intactos todos los demás          ficheros de este archivo .zip?
+¿Desea dejar intactos todos los demás ficheros de este archivo .zip?
 #MSG_FILE_OVERWRITE_WITH_A
 *A Sobrescribir
 #MSG_FILE_LEAVE_WITH_B
@@ -252,13 +252,13 @@ Fichero %d de %d  -  %d de %d KiB
 #MSG_PROGRESS_CANCEL_WITH_B
 *B para cancelar
 #MSG_ERROR_INPUT_FILE_READ
-  Fallo al leer algún fichero de origen.             Compruebe que la tarjeta está bien              introducida.
+Fallo al leer algún fichero de origen. Compruebe que la tarjeta está bien introducida.
 #MSG_ERROR_COMPRESSED_FILE_READ
-  Fallo al leer algún fichero comprimido.          Puede estar corrupto. Compruebe que la     tarjeta está bien introducida.
+Fallo al leer algún fichero comprimido. Puede estar corrupto. Compruebe que la tarjeta está bien introducida.
 #MSG_ERROR_OUTPUT_FILE_OPEN
-  Fallo al crear el fichero de destino.               Puede ser falta de espacio libre, tener un    nombre de fichero demasiado largo, haber   un directorio con el mismo nombre o haber   512 elementos en la raiz.
+Fallo al crear el fichero de destino. Puede ser falta de espacio libre, tener un nombre de fichero demasiado largo, haber un directorio con el mismo nombre o haber 512 elementos en la raiz.
 #MSG_ERROR_OUTPUT_FILE_WRITE
-  Fallo de escritura del fichero de destino.      Compruebe que la tarjeta está bien              introducida y que tiene suficiente espacio    libre.
+Fallo de escritura del fichero de destino. Compruebe que la tarjeta está bien introducida y que tiene suficiente espacio libre.
 #MSG_ERROR_RETRY_WITH_A
 *A Reintentar
 #MSG_ERROR_ABORT_WITH_B
