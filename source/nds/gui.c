@@ -1254,7 +1254,11 @@ s32 load_file(char **wildcards, char *result, char *default_dir_name)
 		//Path auto scroll
 		unsigned int m = path_scroll & 0xFF;
 		if(m < 20) //pause 0.5sec
-			path_scroll += 1;
+		{
+			draw_hscroll(0, 0);
+			// ^ but prevent flashing with non-scrolling paths
+ 			path_scroll += 1;
+		}
 		else {
 			show_icon(down_screen_addr, &ICON_TITLE, 0, 0);
 			show_icon(down_screen_addr, &ICON_TITLEICON, 12, 9);
