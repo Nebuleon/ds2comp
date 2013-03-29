@@ -1751,6 +1751,7 @@ u32 menu()
 		if(NULL != current_menu) {
 			if(current_menu->end_function)
 				current_menu->end_function();
+			current_menu->focus_option = current_menu->screen_focus = current_option_num;
 		}
 
 		current_menu = new_menu;
