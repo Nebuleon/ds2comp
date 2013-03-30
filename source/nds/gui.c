@@ -62,7 +62,7 @@ char *language_options[] = { (char *) &lang[0], (char *) &lang[1], (char *) &lan
 #define APPLICATION_CONFIG_HEADER_SIZE 7
 APPLICATION_CONFIG application_config;
 
-#define SUBMENU_ROW_NUM 6
+#define SUBMENU_ROW_NUM 8
 
 // These are U+05C8 and subsequent codepoints encoded in UTF-8.
 const char HOTKEY_A_DISPLAY[] = {0xD7, 0x88, 0x00};
@@ -893,7 +893,7 @@ static int load_file_list(struct FILE_LIST_INFO *filelist_infop)
 /*--------------------------------------------------------
   读取文件
 --------------------------------------------------------*/
-#define FILE_LIST_ROWS 6
+#define FILE_LIST_ROWS 8
 #define FILE_LIST_ROWS_CENTER   ((FILE_LIST_ROWS+1)/2-1)
 #define FILE_LIST_POSITION 42		//Started displaying x position
 
@@ -974,10 +974,10 @@ s32 load_file(char **wildcards, char *result, char *default_dir_name)
 				// ___ 60        above or below these are ignored.
 				// . . . (+27)
 				// ___ 192
-				if(inputdata.y <= 33 || inputdata.y > 192)
+				if(inputdata.y <= GUI_ROW1_Y || inputdata.y > GUI_ROW1_Y + FILE_LIST_ROWS * GUI_ROW_SY)
 					break;
 				else
-					mod = (inputdata.y - 33) / 27;
+					mod = (inputdata.y - GUI_ROW1_Y) / GUI_ROW_SY;
 
 				if(selected_item_on_list - selected_item_on_screen + mod >= total_items_num)
 					break;
@@ -1226,7 +1226,7 @@ s32 load_file(char **wildcards, char *result, char *default_dir_name)
 			//draw background
 			show_icon(down_screen_addr, &ICON_SUBBG, 0, 0);
 			show_icon(down_screen_addr, &ICON_TITLE, 0, 0);
-			show_icon(down_screen_addr, &ICON_TITLEICON, 12, 9);
+			show_icon(down_screen_addr, &ICON_TITLEICON, TITLE_ICON_X, TITLE_ICON_Y);
 
 			//release data struct to draw scrolling string
 			//Path
@@ -1251,14 +1251,14 @@ s32 load_file(char **wildcards, char *result, char *default_dir_name)
 			{
 				if(k == selected_item_on_screen) {
 					color = COLOR_ACTIVE_ITEM;
-					show_icon(down_screen_addr, &ICON_SUBSELA, 6, 35 + k*27);
+					show_icon(down_screen_addr, &ICON_SUBSELA, SUBSELA_X, GUI_ROW1_Y + k * GUI_ROW_SY + SUBSELA_OFFSET_Y);
 				}
 				else
 					color = COLOR_INACTIVE_ITEM;
 
 				//directorys
 				if((m+1) > num_files) {
-					show_icon(down_screen_addr, &ICON_DIRECTORY, FILE_SELECTOR_ICON_X, 37 + k*27);
+					show_icon(down_screen_addr, &ICON_DIRECTORY, FILE_SELECTOR_ICON_X, GUI_ROW1_Y + k * GUI_ROW_SY + FILE_SELECTOR_ICON_Y);
 					pt = dir_list[m - num_files];
 				}
 				//files
@@ -1266,16 +1266,16 @@ s32 load_file(char **wildcards, char *result, char *default_dir_name)
 					pt= strrchr(file_list[m], '.');
 
 					if(!strcasecmp(pt, ".zip") || !strcasecmp(pt, ".gz"))
-						show_icon(down_screen_addr, &ICON_ZIPFILE, FILE_SELECTOR_ICON_X, 37 + k*27);
+						show_icon(down_screen_addr, &ICON_ZIPFILE, FILE_SELECTOR_ICON_X, GUI_ROW1_Y + k * GUI_ROW_SY + FILE_SELECTOR_ICON_Y);
 					else if(!strcasecmp(file_list[m], ".."))
-						show_icon(down_screen_addr, &ICON_DOTDIR, FILE_SELECTOR_ICON_X, 37 + k*27);
+						show_icon(down_screen_addr, &ICON_DOTDIR, FILE_SELECTOR_ICON_X, GUI_ROW1_Y + k * GUI_ROW_SY + FILE_SELECTOR_ICON_Y);
 					else //Not recoganized file
-						show_icon(down_screen_addr, &ICON_UNKNOW, FILE_SELECTOR_ICON_X, 37 + k*27);
+						show_icon(down_screen_addr, &ICON_UNKNOW, FILE_SELECTOR_ICON_X, GUI_ROW1_Y + k * GUI_ROW_SY + FILE_SELECTOR_ICON_Y);
 
 					pt = file_list[m];
 				}
 
-				draw_hscroll_init(down_screen_addr, FILE_SELECTOR_NAME_X, 40 + k*27, FILE_SELECTOR_NAME_SX, 
+				draw_hscroll_init(down_screen_addr, FILE_SELECTOR_NAME_X, GUI_ROW1_Y + k * GUI_ROW_SY + TEXT_OFFSET_Y, FILE_SELECTOR_NAME_SX, 
 					COLOR_TRANS, color, pt);
 			}
 
@@ -1286,20 +1286,20 @@ s32 load_file(char **wildcards, char *result, char *default_dir_name)
 			char *pt;
 
 			m = selected_item_on_screen;
-			show_icon(down_screen_addr, &ICON_SUBSELA, 6, 35 + m*27);
+			show_icon(down_screen_addr, &ICON_SUBSELA, SUBSELA_X, GUI_ROW1_Y + m * GUI_ROW_SY + SUBSELA_OFFSET_Y);
 
 			n = selected_item_on_list;
 			if((n+1) > num_files)
-				show_icon(down_screen_addr, &ICON_DIRECTORY, 17, 37 + m*27);
+				show_icon(down_screen_addr, &ICON_DIRECTORY, FILE_SELECTOR_ICON_X, GUI_ROW1_Y + m * GUI_ROW_SY + FILE_SELECTOR_ICON_Y);
 			else {
 				pt= strrchr(file_list[n], '.');
 
 				if(!strcasecmp(pt, ".zip") || !strcasecmp(pt, ".gz"))
-					show_icon(down_screen_addr, &ICON_ZIPFILE, FILE_SELECTOR_ICON_X, 37 + m*27);
+					show_icon(down_screen_addr, &ICON_ZIPFILE, FILE_SELECTOR_ICON_X, GUI_ROW1_Y + m * GUI_ROW_SY + FILE_SELECTOR_ICON_Y);
 				else if(!strcasecmp(file_list[m], ".."))
-					show_icon(down_screen_addr, &ICON_DOTDIR, FILE_SELECTOR_ICON_X, 37 + m*27);
+					show_icon(down_screen_addr, &ICON_DOTDIR, FILE_SELECTOR_ICON_X, GUI_ROW1_Y + m * GUI_ROW_SY + FILE_SELECTOR_ICON_Y);
 				else //Not recoganized file
-					show_icon(down_screen_addr, &ICON_UNKNOW, FILE_SELECTOR_ICON_X, 37 + m*27);
+					show_icon(down_screen_addr, &ICON_UNKNOW, FILE_SELECTOR_ICON_X, GUI_ROW1_Y + m * GUI_ROW_SY + FILE_SELECTOR_ICON_Y);
 			}
 
 			draw_hscroll(m+1, redraw);
@@ -1316,7 +1316,7 @@ s32 load_file(char **wildcards, char *result, char *default_dir_name)
 		}
 		else {
 			show_icon(down_screen_addr, &ICON_TITLE, 0, 0);
-			show_icon(down_screen_addr, &ICON_TITLEICON, 12, 9);
+			show_icon(down_screen_addr, &ICON_TITLEICON, TITLE_ICON_X, TITLE_ICON_Y);
 
 			if(path_scroll & 0x8000)	//scroll left
 			{
@@ -1609,8 +1609,8 @@ u32 menu()
 
         strcpy(line_buffer, *(display_option->display_string));
         line_num= display_option-> line_number;
-        PRINT_STRING_BG(down_screen_addr, line_buffer, COLOR_INACTIVE_ITEM, COLOR_TRANS, 27,
-            40 + (display_option->line_number)*27);
+        PRINT_STRING_BG(down_screen_addr, line_buffer, COLOR_INACTIVE_ITEM, COLOR_TRANS, OPTION_TEXT_X,
+            GUI_ROW1_Y + (display_option->line_number) * GUI_ROW_SY + TEXT_OFFSET_Y);
 
 		num_byte = freespace;
 
@@ -1642,7 +1642,7 @@ u32 menu()
         }
 
         PRINT_STRING_BG(down_screen_addr, line_buffer, COLOR_INACTIVE_ITEM, COLOR_TRANS, 147,
-            40 + (display_option->line_number)*27);
+            GUI_ROW1_Y + (display_option->line_number) * GUI_ROW_SY + TEXT_OFFSET_Y);
     }
 
     char *on_off_options[] = { (char*)&msg[MSG_GENERAL_OFF], (char*)&msg[MSG_GENERAL_ON] };
@@ -1848,7 +1848,7 @@ u32 menu()
 			//draw background
 			show_icon(down_screen_addr, &ICON_SUBBG, 0, 0);
 			show_icon(down_screen_addr, &ICON_TITLE, 0, 0);
-			show_icon(down_screen_addr, &ICON_TITLEICON, 12, 9);
+			show_icon(down_screen_addr, &ICON_TITLEICON, TITLE_ICON_X, TITLE_ICON_Y);
 
 			strcpy(line_buffer, *(display_option->display_string));
 			draw_string_vcenter(down_screen_addr, 0, 9, 256, COLOR_ACTIVE_ITEM, line_buffer);
@@ -1891,16 +1891,16 @@ u32 menu()
 				line_num = SUBMENU_ROW_NUM;
 
 			if(focus_option == 0)
-				show_icon(down_screen_addr, &ICON_BACK, 229, 10);
+				show_icon(down_screen_addr, &ICON_BACK, BACK_BUTTON_X, BACK_BUTTON_Y);
 			else
-				show_icon(down_screen_addr, &ICON_NBACK, 229, 10);
+				show_icon(down_screen_addr, &ICON_NBACK, BACK_BUTTON_X, BACK_BUTTON_Y);
 
 			for(i= 0; i < line_num; i++, display_option++)
     	    {
     	        unsigned short color;
 
 				if(display_option == current_option)
-					show_icon(down_screen_addr, &ICON_SUBSELA, 6, 35 + i*27);
+					show_icon(down_screen_addr, &ICON_SUBSELA, SUBSELA_X, GUI_ROW1_Y + i * GUI_ROW_SY + SUBSELA_OFFSET_Y);
 
 				if(display_option->passive_function)
 				{
@@ -1929,7 +1929,7 @@ u32 menu()
 					else
 						color= COLOR_INACTIVE_ITEM;
 	
-					PRINT_STRING_BG(down_screen_addr, line_buffer, color, COLOR_TRANS, OPTION_TEXT_X, 40 + i*27);
+					PRINT_STRING_BG(down_screen_addr, line_buffer, color, COLOR_TRANS, OPTION_TEXT_X, GUI_ROW1_Y + i * GUI_ROW_SY + TEXT_OFFSET_Y);
 				}
     	    }
     	}
@@ -1945,7 +1945,7 @@ u32 menu()
 			case CURSOR_TOUCH:
 				ds2_getrawInput(&inputdata);
 				/* Back button at the top of every menu but the main one */
-				if(current_menu != &main_menu && inputdata.x > 231 && inputdata.y <= 25)
+				if(current_menu != &main_menu && inputdata.x >= BACK_BUTTON_X && inputdata.y < BACK_BUTTON_Y + ICON_BACK.y)
 				{
 					choose_menu(current_menu->options->sub_menu);
 					break;
@@ -1972,13 +1972,13 @@ u32 menu()
 				else if(current_menu != (main_menu.options + 0)->sub_menu
 				&& current_menu != (main_menu.options + 1)->sub_menu)
 				{
-					if (inputdata.y <= 33 || inputdata.y > 192)
+					if (inputdata.y <= GUI_ROW1_Y || inputdata.y > GUI_ROW1_Y + GUI_ROW_SY * SUBMENU_ROW_NUM)
 						break;
 					// ___ 33        This screen has 6 possible rows. Touches
 					// ___ 60        above or below these are ignored.
 					// . . . (+27)   The row between 33 and 60 is [1], though!
 					// ___ 192
-					u32 next_option_num = (inputdata.y - 33) / 27 + 1;
+					u32 next_option_num = (inputdata.y - GUI_ROW1_Y) / GUI_ROW_SY + 1;
 					struct _MENU_OPTION_TYPE *next_option = current_menu->options + next_option_num;
 
 					if (next_option_num >= current_menu->num_options)
