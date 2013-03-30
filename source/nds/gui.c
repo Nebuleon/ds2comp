@@ -1816,7 +1816,8 @@ u32 menu()
 	mdelay(100); // to prevent ds2_setBacklight() from crashing
 	ds2_setBacklight(1);
 	
-	wait_Allkey_release(0);
+	wait_Allkey_release(~KEY_LID); // Allow the lid closing to go through
+	// so the user can close the lid and make it sleep after compressing
 	bg_screenp= (u16*)malloc(256*192*2);
 
 	repeat = 1;
