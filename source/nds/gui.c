@@ -311,10 +311,10 @@ gui_action_type get_gui_input(void)
 			mdelay(1);
 		} while (inputdata.key & KEY_LID);
 		ds2_wakeup();
-		// In the menu, the lower screen's backlight needs to be on,
-		// and it is on right away after resuming from suspend.
-		// mdelay(100); // needed to avoid ds2_setBacklight crashing
-		// ds2_setBacklight(3);
+		// In the menu, the upper screen's backlight can be off,
+		// but it is on right away after resuming from suspend.
+		mdelay(100); // needed to avoid ds2_setBacklight crashing
+		ds2_setBacklight(1);
 	}
 
 	unsigned int i;
