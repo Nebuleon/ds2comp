@@ -39,6 +39,10 @@ Decompress
 Options
 #MSG_MAIN_MENU_EXIT
 Exit
+#MSG_FILE_MENU_LOADING_LIST
+Loading...
+#MSG_FILE_MENU_SORTING_LIST
+Sorting...
 #FMT_OPTIONS_COMPRESSION_LEVEL
 Compression level            %d
 #FMT_OPTIONS_LANGUAGE
@@ -118,6 +122,10 @@ Uitpakken
 Opties
 #MSG_MAIN_MENU_EXIT
 Afsluiten
+#MSG_FILE_MENU_LOADING_LIST
+Laden...
+#MSG_FILE_MENU_SORTING_LIST
+Sorteren...
 #FMT_OPTIONS_COMPRESSION_LEVEL
 Compressieniveau            %d
 #FMT_OPTIONS_LANGUAGE
@@ -197,6 +205,10 @@ Décompresser
 Options
 #MSG_MAIN_MENU_EXIT
 Quitter
+#MSG_FILE_MENU_LOADING_LIST
+Chargement...
+#MSG_FILE_MENU_SORTING_LIST
+Tri...
 #FMT_OPTIONS_COMPRESSION_LEVEL
 Niveau de compression    %d
 #FMT_OPTIONS_LANGUAGE
@@ -276,6 +288,10 @@ Descomprimir
 Opciones
 #MSG_MAIN_MENU_EXIT
 Salir
+#MSG_FILE_MENU_LOADING_LIST
+Cargando...
+#MSG_FILE_MENU_SORTING_LIST
+Ordenando...
 #FMT_OPTIONS_COMPRESSION_LEVEL
 Nivel de compresión              %d
 #FMT_OPTIONS_LANGUAGE
@@ -355,6 +371,10 @@ Entpacken
 Optionen
 #MSG_MAIN_MENU_EXIT
 Beenden
+#MSG_FILE_MENU_LOADING_LIST
+Laden...
+#MSG_FILE_MENU_SORTING_LIST
+Sortieren...
 #FMT_OPTIONS_COMPRESSION_LEVEL
 Komprimierungslevel            %d
 #FMT_OPTIONS_LANGUAGE
