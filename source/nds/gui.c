@@ -1015,8 +1015,13 @@ s32 load_file(char **wildcards, char *result, char *default_dir_name)
 				else
 				{
 					char* Extension = strrchr(EntryNames[i], '.');
-					if (strcasecmp(Extension, ".zip") == 0 || strcasecmp(Extension, ".gz") == 0)
-						icon = &ICON_ZIPFILE;
+					if (Extension != NULL)
+					{
+						if (strcasecmp(Extension, ".zip") == 0 || strcasecmp(Extension, ".gz") == 0)
+							icon = &ICON_ZIPFILE;
+						else
+							icon = &ICON_UNKNOW;
+					}
 					else
 						icon = &ICON_UNKNOW;
 				}
