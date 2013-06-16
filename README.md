@@ -1,4 +1,4 @@
-DS2Compress version 0.61, 2013-03-10
+DS2Compress version 0.62, 2013-06-16
 
 A fast gzip compressor and decompressor for the Supercard DSTWO.
 
@@ -6,19 +6,6 @@ Based on:
 * zlib, by Jean-Loup Gailly and Mark Adler
 * NDSSFC's GUI, by the Supercard team, improved by GBAtemp users BassAceGold,
   ShadauxCat (in CATSFC) and Nebuleon (in CATSFC)
-
-# CAVEATS
-
-* **Do not unpack files without extensions (such as README and ChangeLog)**
-  **from .zip files, or uncompress .gz files that have no extension before**
-  **.gz. They corrupt the filesystem and crash applications that read your**
-  **storage card!**
-* **Unpacking some files creates a phantom file beside the real one. In**
-  **certain circumstances, these phantom files may cause your computer to**
-  **ask you to reformat your storage card. Do not reformat your card! In**
-  **certain circumstances, the files can cause other real files to fail to**
-  **be created correctly.**
-* **Please make backups of files on your hard drive if you're not sure.**
 
 # Compiling
 
