@@ -69,8 +69,7 @@
 
 #include "unz.h"      /* this must supply the slide[] (byte) array */
 #include "unzipP.h"
-//#include <stdlib.h>
-#include "ds2_malloc.h"
+#include <stdlib.h>
 
 #ifndef WSIZE
 #  define WSIZE 0x8000  /* window size--must be a power of two, and at least

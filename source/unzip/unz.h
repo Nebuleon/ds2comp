@@ -147,7 +147,7 @@
 #endif /* ?MODERN */
 
 /* this include must be down here for SysV.4, for some reason... */
-#include <signal.h>      /* used in unzip.c, file_io.c */
+// #include <signal.h>      /* used in unzip.c, file_io.c */
 
 
 

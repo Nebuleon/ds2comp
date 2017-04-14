@@ -20,167 +20,180 @@
 #ifndef __DRAW_H__
 #define __DRAW_H__
 
-#include "ds2_types.h"
-#include "ds2io.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <ds2/ds.h>
 #include "bdf_font.h"
-
-#define NDS_SCREEN_WIDTH 256
-#define NDS_SCREEN_HEIGHT 192
-#define NDS_SCREEN_SIZE	(NDS_SCREEN_WIDTH*NDS_SCREEN_HEIGHT)
-
-#define COLOR16(red, green, blue) ((blue << 10) | (green << 5) | red)
-#define GET_R16(color) (color & 0x1f)
-#define GET_G16(color) ((color >> 5) & 0x1f)
-#define GET_B16(color) ((color >> 10)& 0x1f)
-#define COLOR32(red, green, blue) (0xff000000 | ((blue & 0xff) << 16) | ((green & 0xff) << 8) | (red & 0xff))
-
-#define RGB24_15(pixel) ((((*pixel) & 0xF8) << 7) |\
-                        (((*(pixel+1)) & 0xF8) << 2) |\
-                        (((*(pixel+2)) & 0xF8)>>3))
-
-#define RGB16_15(pixel) ((((*pixel)>>10) & 0x1F) |\
-						(((*pixel) & 0x1F) << 10) |\
-						((*pixel) & 0x83E0))
 
 
 #define PRINT_STRING(screen, str, fg_color, x, y)							   \
-  BDF_render_mix(screen, SCREEN_WIDTH, x, y, 0, COLOR_TRANS, fg_color, str)				   \
+  BDF_RenderUTF8s(screen, DS_SCREEN_WIDTH, x, y, COLOR_TRANS, fg_color, str)				   \
 
 #define PRINT_STRING_SHADOW(screen, str, fg_color, x, y)                       \
-  BDF_render_mix(screen, SCREEN_WIDTH, x+1, y+1, 0, 0, 0, str);             				   \
-  BDF_render_mix(screen, SCREEN_WIDTH, x, y, 0, 0, 0, str)                  				   \
+  BDF_RenderUTF8s(screen, DS_SCREEN_WIDTH, x+1, y+1, 0, 0, str);             				   \
+  BDF_RenderUTF8s(screen, DS_SCREEN_WIDTH, x, y, 0, 0, str)                  				   \
 
 #define PRINT_STRING_BG(screen, str, fg_color, bg_color, x, y)                 \
-  BDF_render_mix(screen, SCREEN_WIDTH, x, y, 0, bg_color, fg_color, str)					   \
+  BDF_RenderUTF8s(screen, DS_SCREEN_WIDTH, x, y, bg_color, fg_color, str)					   \
 
-// #define PRINT_STRING_BG_UTF8(screen, utf8, fg_color, bg_color, x, y)           \
-//   BDF_render_mix(screen, SCREEN_WIDTH, x, y, 0, bg_color, fg_color, utf8)	   \
+#define COLOR_TRANS         0xFFFF
+#define COLOR_WHITE         BGR555(31, 31, 31)
+#define COLOR_BLACK         BGR555( 0,  0,  0)
 
-
-//colors
-#define COLOR_TRANS         COLOR16(31, 31, 63)
-#define COLOR_WHITE         COLOR16(31, 31, 31)
-#define COLOR_BLACK         COLOR16( 0,  0,  0)
-#define COLOR_TEXT          COLOR16(31, 31, 31)
-#define COLOR_PROGRESS_TEXT COLOR16( 0,  0,  0)
-#define COLOR_PROGRESS_BAR  COLOR16(15, 15, 15)
-#define COLOR_ERROR         COLOR16(31,  0,  0)
-#define COLOR_BG            COLOR16(2,  4,  10)
-#define COLOR_BG32          COLOR32(2*8,  4*8,  10*8)
-#define COLOR_ROM_INFO      COLOR16(22, 18, 26)
-#define COLOR_ACTIVE_ITEM   COLOR16(31, 31, 31)
-#define COLOR_INACTIVE_ITEM COLOR16(11,  7, 19)
-#define COLOR_HELP_TEXT     COLOR16(16, 20, 24)
-#define COLOR_DIALOG        COLOR16(31, 31, 31)
-#define COLOR_DIALOG_SHADOW COLOR16( 0,  2,  8)
-#define COLOR_FRAME         COLOR16( 0,  0,  0)
-#define COLOR_YESNO_TEXT    COLOR16( 0,  0,  0)
-#define COLOR_GREEN         COLOR16( 0, 31, 0 )
-#define COLOR_GREEN1        COLOR16( 0, 24, 0 )
-#define COLOR_GREEN2        COLOR16( 0, 18, 0 )
-#define COLOR_GREEN3        COLOR16( 0, 12, 0 )
-#define COLOR_GREEN4        COLOR16( 0, 6, 0 )
-#define COLOR_RED           COLOR16( 31, 0, 0 )
-#define COLOR_MSSG			COLOR16( 16, 8, 29)
-/******************************************************************************
- *
- ******************************************************************************/
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct background{
-    char bgname[128];
-    char bgbuffer[256*192*2];
+extern uint16_t COLOR_BG;
+extern uint16_t COLOR_INACTIVE_ITEM;
+extern uint16_t COLOR_ACTIVE_ITEM;
+extern uint16_t COLOR_MSSG;
+extern uint16_t COLOR_INACTIVE_MAIN;
+extern uint16_t COLOR_ACTIVE_MAIN;
+
+struct gui_icon {
+	const char *name;      /* Base name of the icon */
+	uint32_t x;            /* Width */
+	uint32_t y;            /* Height */
+	const uint16_t *data;  /* Image data (BGR555) */
 };
 
-struct gui_iconlist{
-    const char *iconname;     //icon name
-    u32 x;                    //picture size
-    u32 y;
-    char *iconbuff;
-};
+extern struct gui_icon gui_icons[];
 
-//extern struct background back_ground;
-extern struct gui_iconlist gui_icon_list[];
+#define ICON_ZIPFILE      gui_icons[0]
+#define ICON_DIRECTORY    gui_icons[1]
+#define ICON_TITLE        gui_icons[2]
 
-#define ICON_ZIPFILE        gui_icon_list[0]
-#define ICON_DIRECTORY      gui_icon_list[1]
-#define ICON_TITLE			gui_icon_list[2]
+#define ICON_EXIT         gui_icons[3]
+#define ICON_COMPRESS     gui_icons[4]
+#define ICON_DECOMPRESS   gui_icons[5]
+#define ICON_OPTIONS      gui_icons[6]
+#define ICON_MSEL         gui_icons[7]
+#define ICON_MNSEL        gui_icons[8]
+#define ICON_NEXIT        gui_icons[9]
+#define ICON_NCOMPRESS    gui_icons[10]
+#define ICON_NDECOMPRESS  gui_icons[11]
+#define ICON_NOPTIONS     gui_icons[12]
 
-#define ICON_EXIT			gui_icon_list[3]
-#define ICON_COMPRESS			gui_icon_list[4]
-#define ICON_DECOMPRESS			gui_icon_list[5]
-#define ICON_OPTIONS			gui_icon_list[6]
-#define ICON_MSEL			gui_icon_list[7]
-#define ICON_MNSEL			gui_icon_list[8]
-#define ICON_NEXIT			gui_icon_list[9]
-#define ICON_NCOMPRESS			gui_icon_list[10]
-#define ICON_NDECOMPRESS		gui_icon_list[11]
-#define ICON_NOPTIONS			gui_icon_list[12]
+#define ICON_UNKNOW       gui_icons[13]
+#define ICON_MAINBG       gui_icons[14]
 
-#define ICON_UNKNOW			gui_icon_list[13]
-#define ICON_MAINBG			gui_icon_list[14]
+#define ICON_TITLEICON    gui_icons[15]
+#define ICON_SUBBG        gui_icons[16]
 
-#define ICON_TITLEICON		gui_icon_list[15]
-#define ICON_SUBBG			gui_icon_list[16]
+#define ICON_SUBSELA      gui_icons[17]
+#define ICON_DOTDIR       gui_icons[18]
+#define ICON_BACK         gui_icons[19]
+#define ICON_NBACK        gui_icons[20]
+#define ICON_MSG          gui_icons[21]
+#define ICON_BUTTON       gui_icons[22]
+#define ICON_PROGRESS     gui_icons[23]
+#define ICON_NPROGRESS    gui_icons[24]
 
-#define ICON_SUBSELA		gui_icon_list[17]
-#define ICON_DOTDIR			gui_icon_list[18]
-#define ICON_BACK			gui_icon_list[19]
-#define ICON_NBACK			gui_icon_list[20]
-#define ICON_MSG			gui_icon_list[21]
-#define ICON_BUTTON			gui_icon_list[22]
-#define ICON_PROGRESS			gui_icon_list[23]
-#define ICON_NPROGRESS			gui_icon_list[24]
+/*
+* Draws a message box. Note that this only shows the message box itself, and
+* not any of its contents.
+*/
+extern void draw_message_box(uint16_t* screen);
 
-/******************************************************************************
+/*
+ * Draws some text centered horizontally on the screen.
  *
- ******************************************************************************/
-extern void print_string_center(void* screen_addr, u32 sy, u32 color, u32 bg_color, char *str);
-extern void print_string_shadow_center(void* screen_addr, u32 sy, u32 color, char *str);
-extern void hline(u32 sx, u32 ex, u32 y, u32 color);
-extern void hline_alpha(u32 sx, u32 ex, u32 y, u32 color, u32 alpha);
-extern void vline(u32 x, u32 sy, u32 ey, u32 color);
-extern void vline_alpha(u32 x, u32 sy, u32 ey, u32 color, u32 alpha);
-extern void drawbox(void* screen_address, u32 sx, u32 sy, u32 ex, u32 ey, u32 color);
-extern void drawboxfill(void* screen_address, u32 sx, u32 sy, u32 ex, u32 ey, u32 color);
-extern void draw_selitem(void* screen_address, u32 x, u32 y, u32 color, u32 active);
-extern void draw_message(void* screen_address, u16 *screen_bg, u32 sx, u32 sy, u32 ex, u32 ey,
-                u32 color_fg);
-extern void draw_string_vcenter(void* screen_address, u32 sx, u32 sy, u32 width, 
-        u32 color_fg, char *string);
+ * In:
+ *   screen: The address of the upper-left corner of the screen.
+ *   sx, sy: The X and Y coordinates of the upper-left corner of the text.
+ *   width: The width of the area that may contain the text to the right of
+ *     'sx'.
+ *   color: The BGR 555 color of the text.
+ *   string: The text to be scrolled, encoded as UTF-8.
+*/
+extern void draw_string_vcenter(uint16_t* screen, uint32_t sx, uint32_t sy, uint32_t width,
+	uint32_t color, const char* string);
 
-#define MAX_SCROLL_STRING   16
-extern u32 draw_hscroll_init(void* screen_address, u32 sx, u32 sy, u32 width, 
-        u32 color_bg, u32 color_fg, char *string);
-extern u32 draw_hscroll(u32 index, s32 scroll_val);
-extern void draw_hscroll_over(u32 index);
-extern void boxfill_alpha(u32 sx, u32 sy, u32 ex, u32 ey, u32 color, u32 alpha);
-extern void init_progress(enum SCREEN_ID screen, u32 total, char *text);
-extern void update_progress(void);
-extern void show_progress(char *text);
-extern void scrollbar(void* screen_addr, u32 sx, u32 sy, u32 ex, u32 ey, u32 all, u32 view, u32 now);
-extern u32 yesno_dialog(char *text);
-extern u32 draw_yesno_dialog(enum SCREEN_ID screen, u32 sy, char *yes, char *no);
-extern u32 draw_hotkey_dialog(enum SCREEN_ID screen, u32 sy, char *clear, char *cancel);
-extern void msg_screen_init(const char *title);
-extern void msg_screen_draw();
-extern void msg_printf(const char *text, ...);
-extern void msg_screen_clear(void);
-extern void msg_set_text_color(u32 color);
+/*
+ * Initialises a text scroller to display a certain string.
+ *
+ * In:
+ *   screen: The address of the upper-left corner of the screen.
+ *   sx, sy: The X and Y coordinates of the upper-left corner of the text.
+ *   width: The width of the scroller's viewport.
+ *   bg_color: The BGR 555 color of the background around the text, or
+ *     COLOR_TRANS for transparency.
+ *   fg_color: The BGR 555 color of the text.
+ *   string: The text to be scrolled, encoded as UTF-8.
+ * Input assertions: sx + width < DS_SCREEN_WIDTH &&
+ *   sy + [text height] < DS_SCREEN_HEIGHT && string != NULL &&
+ *   screen != NULL.
+ * Returns: the scroller's handle, to be used to scroll the text in
+ *   draw_hscroll.
+ */
+extern void* hscroll_init(uint16_t* screen, uint32_t sx, uint32_t sy, uint32_t width,
+	uint16_t bg_color, uint16_t fg_color, const char* string);
+extern void* draw_hscroll_init(uint16_t* screen, uint32_t sx, uint32_t sy, uint32_t width,
+	uint16_t bg_color, uint16_t fg_color, const char* string);
 
-extern int icon_init(u32 language_id);
-extern int gui_change_icon(u32 language_id);
-extern int show_background(void *screen, char *bgname);
-extern void show_icon(void* screen, struct gui_iconlist *icon, u32 x, u32 y);
-extern void show_Vscrollbar(char *screen, u32 x, u32 y, u32 part, u32 total);
+/*
+ * Scrolls an initialised scroller's text.
+ *
+ * A scroller is never allowed to go past the beginning of the text when
+ * scrolling to the left, or to go past the end when scrolling to the right.
+ *
+ * In:
+ *   handle: The scroller's handle.
+ *   scroll_val: The number of pixels to scroll. The sign affects the
+ *     direction. If scroll_val > 0, the scroller's viewport is moved to
+ *     the left; if < 0, the scroller's viewport is moved to the right.
+ * Input assertions: handle was returned by a previous call to
+ *   draw_hscroll_init and not used in a call to draw_hscroll_over.
+ * Returns: The number of pixels still available to scroll in the direction
+ *   specified by the sign of 'scroll_val'.
+ *
+ * Example: (assume each letter is 1 pixel; this won't be true in reality)
+ *           [some lengthy text shown in ]         |
+ * val -5 -> |    [lengthy text shown in a scr]xxxxx -> to right, returns 5
+ * val -5 -> |         [hy text shown in a scroller] -> to right, returns 0
+ * val  3 -> xxxxxxx[ngthy text shown in a scrol]  | -> to left,  returns 7
+ * val  3 -> xxxx[ lengthy text shown in a sc]     | -> to left,  returns 4
+ */
+extern uint32_t draw_hscroll(void* handle, int32_t scroll_val);
+extern void draw_hscroll_over(void* handle);
 
-extern void show_log(void* screen_addr);
-extern void err_msg(enum SCREEN_ID screen, char *msg);
+/*
+ * Draws the buttons for a yes/no dialog and returns true if yes was selected,
+ * or false if no was selected.
+ */
+extern bool draw_yesno_dialog(enum DS_Engine engine, const char* yes, const char* no);
 
-extern void copy_screen(void* to, void *from, u32 x, u32 y, u32 w, u32 h);
-extern void blit_to_screen(void* screen_addr, u16 *src, u32 w, u32 h, u32 dest_x, u32 dest_y);
+/*
+ * Draws the buttons for a hotkey dialog (with Clear and Cancel buttons)
+ * and returns a bitmask containing the DS buttons pressed as in <ds2/ds.h>.
+ */
+extern uint16_t draw_hotkey_dialog(enum DS_Engine engine, const char* clear, const char* cancel);
+
+/*
+* Loads GUI icons corresponding to the given language_id.
+*
+* In:
+*   language_id: The sequence number of the language to load language-specific
+*     icons for.
+* Returns:
+*   0 on success.
+*   1 if there is insufficient space in gui_picture for all image data
+*   (this is an internal error).
+*   -(n + 1) if an error occurred while loading any icon, with 'n' being the
+*   index of the first icon for which an error occurred.
+*/
+extern int gui_change_icon(uint32_t language_id);
+extern int icon_init(uint32_t language_id);
+extern int color_init(void);
+extern void show_icon(uint16_t* screen, const struct gui_icon *icon, uint32_t x, uint32_t y);
+extern void show_partial_icon_horizontal(uint16_t* screen, const struct gui_icon* icon, uint32_t x, uint32_t y, uint32_t width);
+
+/*
+* Displays the boot logo. No error is returned if the logo is not present;
+* the screen is simply not overwritten.
+*/
+extern void show_logo(void);
 
 #ifdef __cplusplus
 }

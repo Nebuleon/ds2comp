@@ -20,8 +20,7 @@
 #ifndef __MESSAGE_H__
 #define __MESSAGE_H__
 
-enum MSG
-{
+enum MSG {
 	MSG_MAIN_MENU_COMPRESS,
 	MSG_MAIN_MENU_DECOMPRESS,
 	MSG_MAIN_MENU_OPTIONS,
@@ -80,13 +79,14 @@ enum LANGUAGE {
 	ENGLISH,
 	FRENCH,
 	SPANISH,
-	GERMAN
+	GERMAN,
+	LANG_END  /* Must be last */
 };
 
-extern char* lang[4]; // Allocated in gui.c, needs to match the languages ^
+extern const char* lang[LANG_END]; // Allocated in gui.c, needs to match the languages ^
 
-char *msg[MSG_END+1];
-char msg_data[16 * 1024];
+extern const char *msg[MSG_END + 1];
+extern char msg_data[16 * 1024];
 
 #endif //__MESSAGE_H__
 

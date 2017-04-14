@@ -20,12 +20,16 @@
 #define DS2COMP_RETRY 55
 #define DS2COMP_STOP  56
 
+#include "zlib.h"
 #include "unzip.h"
-#include "zutil.h"
+
+#include <dirent.h>
+#include <stdio.h>
+#include <sys/stat.h>
 
 #ifdef STDC
 #  include <string.h>
-// #  include <stdlib.h>
+#  include <stdlib.h>
 #else
    extern void exit  OF((int));
 #endif
@@ -66,6 +70,13 @@
 #endif
 #define SUFFIX_LEN (sizeof(GZ_SUFFIX)-1)
 
+#ifdef MAXSEG_64K
+#  define local static
+   /* Needed for systems with limitation on stack size. */
+#else
+#  define local
+#endif
+
 #define DECOMPRESSION_BUFFER_SIZE 131072
 #define MAX_NAME_LEN                1024
 
@@ -73,9 +84,9 @@
 #include "draw.h"
 #include "message.h"
 
-extern int error    OF((char *message)); // to avoid duplicate definitions,
-                                         // this one is in minigzip.c
-int ZipUncompress   OF((char  *file));
+extern int error    OF((const char *message)); // to avoid duplicate definitions,
+                                               // this one is in minigzip.c
+int ZipUncompress   OF((const char  *file));
 
 /* ===========================================================================
  * Uncompress the given .zip file and preserve it.
@@ -84,10 +95,10 @@ int ZipUncompress   OF((char  *file));
  * Returns 0 on failure if the user wants to retry.
  */
 int ZipUncompress(file)
-    char  *file;
+    const char  *file;
 {
     // Files are extracted relative to the path containing the .zip file.
-    char Path[MAX_PATH + 1];
+    char Path[PATH_MAX + 1];
     strcpy(Path, file);
     char *pt = strrchr(Path, '/');
     if (pt == NULL)
@@ -116,14 +127,14 @@ int ZipUncompress(file)
         return error(msg[MSG_ERROR_COMPRESSED_FILE_READ]) != DS2COMP_RETRY;
     }
     unsigned int CurrentFile = 0;
-    unsigned int OverwriteAllFiles = 0;
-    unsigned int LeaveAllFiles = 0;
-    unsigned int AllFilesAsked = 0;
+    bool OverwriteAllFiles = false;
+    bool LeaveAllFiles = false;
+    bool AllFilesAsked = false;
     // For each file...
     for (;;) {
         // 1. Get the size and name of this file. Update progress accordingly.
         unz_file_info file_info;
-        char Filename[MAX_PATH + 1];
+        char Filename[PATH_MAX + 1];
         if (unzGetCurrentFileInfo(in, &file_info, Filename, sizeof (Filename), NULL, 0 /* not interested in the extra field */, NULL, 0 /* not interested in the global comment */) != UNZ_OK) {
             unzClose(in);
             return error(msg[MSG_ERROR_COMPRESSED_FILE_READ]) != DS2COMP_RETRY;
@@ -136,7 +147,7 @@ int ZipUncompress(file)
         else
             UpdateProgressChangeFile(++CurrentFile, Filename, file_info.uncompressed_size);
 
-        char outfile[MAX_PATH + 1];
+        char outfile[PATH_MAX + 1];
         strcpy(outfile, Path);
         strcat(outfile, "/");
         strcat(outfile, Filename); // buffer overflow possible
@@ -157,24 +168,24 @@ int ZipUncompress(file)
         if (FileExists && !OverwriteAllFiles /* && !AllFilesAsked */)
         {
             // This file already exists. Overwrite it?
-            InitMessage ();
-            draw_string_vcenter(down_screen_addr, MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, msg[MSG_DIALOG_OVERWRITE_EXISTING_FILE]);
+            InitMessage();
+            draw_string_vcenter(DS2_GetSubScreen(), MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, msg[MSG_DIALOG_OVERWRITE_EXISTING_FILE]);
 
-            u32 OverwriteCurrentFile = draw_yesno_dialog(DOWN_SCREEN, 115, msg[MSG_FILE_OVERWRITE_WITH_A], msg[MSG_FILE_LEAVE_WITH_B]);
-            FiniMessage ();
+            bool OverwriteCurrentFile = draw_yesno_dialog(DS_ENGINE_SUB, msg[MSG_FILE_OVERWRITE_WITH_A], msg[MSG_FILE_LEAVE_WITH_B]);
+            FiniMessage();
 
             if (!AllFilesAsked) {
                 // Additionally, do you wish to {overwrite | leave} all files
                 // for this .zip archive?
-                InitMessage ();
+                InitMessage();
                 if (OverwriteCurrentFile) {
-                    draw_string_vcenter(down_screen_addr, MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, msg[MSG_DIALOG_OVERWRITE_ALL_FILES]);
-                    OverwriteAllFiles = draw_yesno_dialog(DOWN_SCREEN, 115, msg[MSG_GENERAL_YES_WITH_A], msg[MSG_GENERAL_NO_WITH_B]);
+                    draw_string_vcenter(DS2_GetSubScreen(), MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, msg[MSG_DIALOG_OVERWRITE_ALL_FILES]);
+                    OverwriteAllFiles = draw_yesno_dialog(DS_ENGINE_SUB, msg[MSG_GENERAL_YES_WITH_A], msg[MSG_GENERAL_NO_WITH_B]);
                 } else {
-                    draw_string_vcenter(down_screen_addr, MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, msg[MSG_DIALOG_LEAVE_ALL_FILES]);
-                    LeaveAllFiles = draw_yesno_dialog(DOWN_SCREEN, 115, msg[MSG_GENERAL_YES_WITH_A], msg[MSG_GENERAL_NO_WITH_B]);
+                    draw_string_vcenter(DS2_GetSubScreen(), MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, msg[MSG_DIALOG_LEAVE_ALL_FILES]);
+                    LeaveAllFiles = draw_yesno_dialog(DS_ENGINE_SUB, msg[MSG_GENERAL_YES_WITH_A], msg[MSG_GENERAL_NO_WITH_B]);
                 }
-                FiniMessage ();
+                FiniMessage();
                 AllFilesAsked = 1;
             }
 
@@ -188,7 +199,7 @@ int ZipUncompress(file)
         unsigned int DirLen = 0;
         while (Filename[DirLen]) {
             if (Filename[DirLen] == '/') { // Found a new path component
-                char IntermediatePath[MAX_PATH + 1];
+                char IntermediatePath[PATH_MAX + 1];
                 strcpy(IntermediatePath, Path);
                 strcat(IntermediatePath, "/");
                 Filename[DirLen] = '\0';
@@ -226,7 +237,7 @@ int ZipUncompress(file)
                 unzCloseCurrentFile(in);
                 unzClose(in);
                 fclose(out);
-                fat_remove(outfile); // PARTIAL FILE
+                remove(outfile); // PARTIAL FILE
                 return error(msg[MSG_ERROR_COMPRESSED_FILE_READ]) != DS2COMP_RETRY;
             }
             if (len == 0) break;
@@ -235,15 +246,15 @@ int ZipUncompress(file)
                 unzCloseCurrentFile(in);
                 unzClose(in);
                 fclose(out);
-                fat_remove(outfile); // PARTIAL FILE
+                remove(outfile); // PARTIAL FILE
                 return error(msg[MSG_ERROR_OUTPUT_FILE_WRITE]) != DS2COMP_RETRY;
             }
 
-            if (ReadInputDuringCompression() & KEY_B) {
+            if (ReadInputDuringCompression() & DS_BUTTON_B) {
                 unzCloseCurrentFile(in);
                 unzClose(in);
                 fclose(out);
-                fat_remove(outfile); // PARTIAL FILE
+                remove(outfile); // PARTIAL FILE
                 return 1;
             }
 
@@ -253,7 +264,7 @@ int ZipUncompress(file)
         fclose(out);
         if (unzCloseCurrentFile(in) != UNZ_OK) { // CRC32 mismatch
             unzClose(in);
-            fat_remove(outfile); // BAD FILE
+            remove(outfile); // BAD FILE
             return error(msg[MSG_ERROR_COMPRESSED_FILE_READ]) != DS2COMP_RETRY;
         }
 

@@ -20,42 +20,117 @@
 #ifndef __BDF_FONT_H__
 #define __BDF_FONT_H__
 
+#include <stdint.h>
+#include <stddef.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct bdffont{
-    unsigned int dwidth;    //byte 3:2 x-distance; 1:0 y-distance
-    unsigned int bbx;       //byte 3 x-width; 2 y-height; 1 x-offset; 0 y-offset
-    unsigned char *bitmap;
+struct bdffont {
+	uint32_t dwidth;    //byte 3:2 x-distance; 1:0 y-distance
+	uint32_t bbx;       //byte 3 x-width; 2 y-height; 1 x-offset; 0 y-offset
+	uint8_t *bitmap;
 };
 
-struct bdflibinfo{
-    unsigned int width;
-    unsigned int height;
-    unsigned int start;
-    unsigned int span;
-    unsigned int maplen;
-    unsigned char *mapmem;
-    struct bdffont *fonts;
+struct bdflibinfo {
+	uint32_t width;
+	uint32_t height;
+	uint32_t start;
+	uint32_t span;
+	uint32_t maplen;
+	uint8_t* mapmem;
+	struct bdffont* fonts;
 };
 
 
 /*-----------------------------------------------------------------------------
 ------------------------------------------------------------------------------*/
 extern int BDF_font_init(void);
-extern void BDF_render_string(void* screen_address, unsigned int x, unsigned int y, unsigned int back, 
-    unsigned int front, char *string);
-extern unsigned int BDF_render16_ucs(void* screen_address, unsigned int screen_w, 
-    unsigned int v_align, unsigned int back, unsigned int front, unsigned short ch);
-extern void BDF_render_mix(void* screen_address, unsigned int screen_w, unsigned int x, 
-    unsigned int y, unsigned int v_align, unsigned int back, unsigned int front, char *string);
-//extern unsigned int BDF_string_width(char *string, unsigned int *len);
-extern char* utf8decode(char *utf8, unsigned short *ucs);
-extern unsigned char* skip_utf8_unit(unsigned char* utf8, unsigned int num);
-extern unsigned int BDF_cut_unicode(unsigned short *unicodes, unsigned int len, unsigned int width, unsigned int direction);
-extern unsigned int BDF_cut_string(char *string, unsigned int width, unsigned int direction);
 extern void BDF_font_release(void);
+
+extern uint32_t BDF_GetFontHeight(void);
+
+/*
+ * Renders a single character given its Unicode codepoint.
+ *
+ * In:
+ *   screen_w: The width of the screen, which is added to the 'screen' address
+ *     between rows.
+ *   bg_color: The color value to apply for unset bits in the glyph's bitmap
+ *     or space around its bounding box. If bit 15 is set (0x8000), nothing is
+ *     drawn.
+ *   fg_color: The color value to apply for set bits in the glyph's bitmap.
+ *   ch: The Unicode codepoint, between U+0000 and U+FFFF, to be drawn.
+ * Out:
+ *   screen: The address of the upper-left corner of the screen part to draw
+ *     the character to. X and Y offsets have been applied to this address.
+ * Returns:
+ *   The width of the character that was just drawn.
+ */
+extern uint32_t BDF_RenderUCS2(uint16_t* screen, size_t screen_w, uint16_t bg_color,
+	uint16_t fg_color, uint16_t ch);
+
+/*
+ * Renders a string of characters encoded in UTF-8.
+ *
+ * In:
+ *   screen_w: The width of the screen, which is added to the 'screen' address
+ *     between rows.
+ *   x: The column at which to start rendering in 'screen'.
+ *   y: The row at which to start rendering in 'screen'.
+ *   bg_color: The color value to apply for unset bits in the glyph's bitmap
+ *     or space around its bounding box. If bit 15 is set (0x8000), nothing is
+ *     drawn.
+ *   fg_color: The color value to apply for set bits in the glyph's bitmap.
+ *   string: The string to be drawn. If drawing this string wraps around the
+ *     right side of the screen, it will continue 1 row of pixels below. A
+ *     newline character in this string will reset 'x' and increase 'y' by
+ *     BDF_GetFontHeight().
+ * Out:
+ *   screen: The address of the upper-left corner of the screen. X and Y
+ *     offsets have NOT been applied to this address.
+ */
+extern void BDF_RenderUTF8s(uint16_t* screen, size_t screen_w, uint32_t x,
+    uint32_t y, uint16_t bg_color, uint16_t fg_color, const char* string);
+
+extern const char* utf8decode(const char *utf8, unsigned short *ucs);
+
+/*
+ * Cuts up a run of Unicode codepoints to fit in 'width' pixels.
+ *
+ * In:
+ *   ucs2s: The run of Unicode codepoints to be used.
+ *   len: The length of the run of Unicode codepoints.
+ *   width: The number of pixels to fit Unicode codepoints into.
+ * Input assertions:
+ * - 'len' elements at and after 'ucs2s' are valid and readable.
+ * Returns:
+ *   The number of Unicode codepoints starting at 'ucs2s' that fit in 'width'
+ *   pixels.
+ */
+extern size_t BDF_CutUCS2s(const uint16_t* ucs2s, size_t len, uint32_t width);
+
+/*
+ * Returns the width, in pixels, of a character given its Unicode codepoint,
+ * which must be U+FFFF or below.
+ */
+extern uint32_t BDF_WidthUCS2(uint16_t ch);
+
+/*
+ * Returns the total width, in pixels, of all characters in 'ucs2s', whose
+ * length is specified by 'len'.
+ *
+ * Input assertions:
+ * - 'len' entries are valid and readable at and after 'ucs2s'.
+ */
+extern uint32_t BDF_WidthUCS2s(const uint16_t* ucs2s, size_t len);
+
+/*
+ * Returns the total width, in pixels, of all characters contained in the
+ * given string, which is a zero-terminated UTF-8 string.
+ */
+uint32_t BDF_WidthUTF8s(const char* utf8);
 
 #ifdef __cplusplus
 }

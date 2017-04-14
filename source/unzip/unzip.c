@@ -5,19 +5,17 @@
  */
 
 
-//#include <stdio.h>
-//#include <stdlib.h>
-#include "fs_api.h"
-#include "ds2_malloc.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "zlib.h"
 #include "unzip.h"
 #include "unzipP.h"
 
 #ifdef STDC
-//#include <stddef.h>
-//#include <string.h>
-//#include <stdlib.h>
+#  include <stddef.h>
+#  include <string.h>
+#  include <stdlib.h>
 #endif
 
 #ifdef NO_ERRNO_H

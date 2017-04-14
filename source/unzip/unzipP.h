@@ -1,7 +1,6 @@
 #ifndef _UNZIPP_H_
 #define _UNZIPP_H_
 
-#include "ds2_malloc.h"
 #include "unzip.h"
 
 #ifndef local

@@ -17,38 +17,42 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include "gui.h"
+
+#include <ds2/ds.h>
+#include <ds2/pm.h>
+#include <dirent.h>
+#include <inttypes.h>
+#include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/stat.h>
 
-#include "ds2_types.h"
-#include "ds2_timer.h"
-#include "ds2io.h"
-#include "ds2_malloc.h"
-#include "ds2_cpu.h"
-#include "fs_api.h"
-#include "key.h"
-#include "gui.h"
 #include "draw.h"
 #include "message.h"
 #include "bitmap.h"
 
 #include "minigzip.h"
+#include "miniunz.h"
 
-char	main_path[MAX_PATH];
-char	gamepak_name[MAX_PATH];
+char main_path[PATH_MAX];
 
 // If adding a language, make sure you update the size of the array in
 // message.h too.
-char *lang[4] =
-	{ 
-		"English",					// 0
-		"Français",					// 1
-		"Español",					// 2
-		"Deutsch",					// 3
-	};
+const char *lang[LANG_END] =
+{
+	"English",   // 0
+	"Français",  // 1
+	"Español",   // 2
+	"Deutsch",   // 3
+};
 
-char *language_options[] = { (char *) &lang[0], (char *) &lang[1], (char *) &lang[2], (char *) &lang[3] };
+const char *language_options[] = { (char *) &lang[0], (char *) &lang[1], (char *) &lang[2], (char *) &lang[3] };
+
+const char *msg[MSG_END + 1];
+char msg_data[16 * 1024] __attribute__((section(".noinit")));
 
 /******************************************************************************
 *	Macro definition
@@ -66,19 +70,20 @@ APPLICATION_CONFIG application_config;
 #define FILE_LIST_ROWS 8
 
 // These are U+05C8 and subsequent codepoints encoded in UTF-8.
-const char HOTKEY_A_DISPLAY[] = {0xD7, 0x88, 0x00};
-const char HOTKEY_B_DISPLAY[] = {0xD7, 0x89, 0x00};
-const char HOTKEY_X_DISPLAY[] = {0xD7, 0x8A, 0x00};
-const char HOTKEY_Y_DISPLAY[] = {0xD7, 0x8B, 0x00};
-const char HOTKEY_L_DISPLAY[] = {0xD7, 0x8C, 0x00};
-const char HOTKEY_R_DISPLAY[] = {0xD7, 0x8D, 0x00};
-const char HOTKEY_START_DISPLAY[] = {0xD7, 0x8E, 0x00};
-const char HOTKEY_SELECT_DISPLAY[] = {0xD7, 0x8F, 0x00};
+// They are null-terminated.
+const char HOTKEY_A_DISPLAY[] = "\xD7\x88";
+const char HOTKEY_B_DISPLAY[] = "\xD7\x89";
+const char HOTKEY_X_DISPLAY[] = "\xD7\x8A";
+const char HOTKEY_Y_DISPLAY[] = "\xD7\x8B";
+const char HOTKEY_L_DISPLAY[] = "\xD7\x8C";
+const char HOTKEY_R_DISPLAY[] = "\xD7\x8D";
+const char HOTKEY_START_DISPLAY[] = "\xD7\x8E";
+const char HOTKEY_SELECT_DISPLAY[] = "\xD7\x8F";
 // These are U+2190 and subsequent codepoints encoded in UTF-8.
-const char HOTKEY_LEFT_DISPLAY[] = {0xE2, 0x86, 0x90, 0x00};
-const char HOTKEY_UP_DISPLAY[] = {0xE2, 0x86, 0x91, 0x00};
-const char HOTKEY_RIGHT_DISPLAY[] = {0xE2, 0x86, 0x92, 0x00};
-const char HOTKEY_DOWN_DISPLAY[] = {0xE2, 0x86, 0x93, 0x00};
+const char HOTKEY_LEFT_DISPLAY[] = "\xE2\x86\x90";
+const char HOTKEY_UP_DISPLAY[] = "\xE2\x86\x91";
+const char HOTKEY_RIGHT_DISPLAY[] = "\xE2\x86\x92";
+const char HOTKEY_DOWN_DISPLAY[] = "\xE2\x86\x93";
 
 #define MAKE_MENU(name, init_function, passive_function, key_function, end_function, \
 	focus_option, screen_focus)												  \
@@ -220,12 +225,12 @@ struct _MENU_OPTION_TYPE
 	void (* action_function)();				//Active option to process input
 	void (* passive_function)();			//Passive function to process this option
 	struct _MENU_TYPE *sub_menu;			//Sub-menu of this option
-	char **display_string;					//Name and other things of this option
+	const char **display_string;			//Name and other things of this option
 	void *options;							//output value of this option
-	u32 *current_option;					//output values
-	u32 num_options;						//Total output values
+	uint32_t *current_option;					//output values
+	uint32_t num_options;						//Total output values
 	char **help_string;						//Help string
-	u32 line_number;						//Order id of this option in it menu
+	uint32_t line_number;						//Order id of this option in it menu
 	MENU_OPTION_TYPE_ENUM option_type;		//Option types
 };
 
@@ -236,9 +241,9 @@ struct _MENU_TYPE
 	void (* key_function)();				//Function to process input
 	void (* end_function)();				//End process of this menu
 	struct _MENU_OPTION_TYPE *options;		//Options array
-	u32	num_options;						//Total options of this menu
-	u32	focus_option;						//Option which obtained focus
-	u32	screen_focus;						//screen positon of the focus option
+	uint32_t	num_options;						//Total options of this menu
+	uint32_t	focus_option;						//Option which obtained focus
+	uint32_t	screen_focus;						//screen positon of the focus option
 };
 
 typedef struct _MENU_OPTION_TYPE MENU_OPTION_TYPE;
@@ -246,12 +251,9 @@ typedef struct _MENU_TYPE MENU_TYPE;
 
 /******************************************************************************
  ******************************************************************************/
-char g_default_rom_dir[MAX_PATH];
+char g_default_rom_dir[PATH_MAX];
 /******************************************************************************
  ******************************************************************************/
-static int sort_function(const void *dest_str_ptr, const void *src_str_ptr);
-static void get_timestamp_string(char *buffer, u16 msg_id, u16 year, u16 mon, u16 day, u16 wday, u16 hour, u16 min, u16 sec, u32 msec);
-static void get_time_string(char *buff, struct rtc *rtcp);
 static void init_application_config(void);
 static int load_application_config_file(void);
 static int save_application_config_file(void);
@@ -260,10 +262,6 @@ static void quit(void);
 /*--------------------------------------------------------
 	Get GUI input
 --------------------------------------------------------*/
-#define BUTTON_REPEAT_START (21428 / 2)
-#define BUTTON_REPEAT_CONTINUE (21428 / 20)
-
-u32 button_repeat_timestamp;
 
 typedef enum
 {
@@ -273,64 +271,49 @@ typedef enum
 } button_repeat_state_type;
 
 button_repeat_state_type button_repeat_state = BUTTON_NOT_HELD;
-unsigned int gui_button_repeat = 0;
+clock_t button_repeat_timestamp;
+uint16_t gui_button_repeat = 0;
 
-gui_action_type key_to_cursor(unsigned int key)
+gui_action_type key_to_cursor(uint16_t key)
 {
 	switch (key)
 	{
-		case KEY_UP:	return CURSOR_UP;
-		case KEY_DOWN:	return CURSOR_DOWN;
-		case KEY_LEFT:	return CURSOR_LEFT;
-		case KEY_RIGHT:	return CURSOR_RIGHT;
-		case KEY_L:	return CURSOR_LTRIGGER;
-		case KEY_R:	return CURSOR_RTRIGGER;
-		case KEY_A:	return CURSOR_SELECT;
-		case KEY_B:	return CURSOR_BACK;
-		case KEY_X:	return CURSOR_EXIT;
-		case KEY_TOUCH:	return CURSOR_TOUCH;
+		case DS_BUTTON_UP:	return CURSOR_UP;
+		case DS_BUTTON_DOWN:	return CURSOR_DOWN;
+		case DS_BUTTON_LEFT:	return CURSOR_LEFT;
+		case DS_BUTTON_RIGHT:	return CURSOR_RIGHT;
+		case DS_BUTTON_L:	return CURSOR_LTRIGGER;
+		case DS_BUTTON_R:	return CURSOR_RTRIGGER;
+		case DS_BUTTON_A:	return CURSOR_SELECT;
+		case DS_BUTTON_B:	return CURSOR_BACK;
+		case DS_BUTTON_X:	return CURSOR_EXIT;
+		case DS_BUTTON_TOUCH:	return CURSOR_TOUCH;
 		default:	return CURSOR_NONE;
 	}
 }
 
-static unsigned int gui_keys[] = {
-	KEY_A, KEY_B, KEY_X, KEY_L, KEY_R, KEY_TOUCH, KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT
+static uint16_t gui_keys[] = {
+	DS_BUTTON_A, DS_BUTTON_B, DS_BUTTON_X, DS_BUTTON_L, DS_BUTTON_R, DS_BUTTON_TOUCH, DS_BUTTON_UP, DS_BUTTON_DOWN, DS_BUTTON_LEFT, DS_BUTTON_RIGHT
 };
 
 gui_action_type get_gui_input(void)
 {
-	gui_action_type	ret;
+	size_t i;
+	struct DS_InputState inputdata;
+	DS2_GetInputState(&inputdata);
 
-	struct key_buf inputdata;
-	ds2_getrawInput(&inputdata);
-
-	if (inputdata.key & KEY_LID)
-	{
-		ds2_setSupend();
-		do {
-			ds2_getrawInput(&inputdata);
-			mdelay(1);
-		} while (inputdata.key & KEY_LID);
-		ds2_wakeup();
-		// In the menu, the upper screen's backlight can be off,
-		// but it is on right away after resuming from suspend.
-		mdelay(100); // needed to avoid ds2_setBacklight crashing
-		ds2_setBacklight(1);
+	if (inputdata.buttons & DS_BUTTON_LID) {
+		DS2_SystemSleep();
 	}
 
-	unsigned int i;
-	while (1)
-	{
-		switch (button_repeat_state)
-		{
+	while (1) {
+		switch (button_repeat_state) {
 		case BUTTON_NOT_HELD:
 			// Pick the first pressed button out of the gui_keys array.
-			for (i = 0; i < sizeof(gui_keys) / sizeof(gui_keys[0]); i++)
-			{
-				if (inputdata.key & gui_keys[i])
-				{
+			for (i = 0; i < sizeof(gui_keys) / sizeof(gui_keys[0]); i++) {
+				if (inputdata.buttons & gui_keys[i]) {
 					button_repeat_state = BUTTON_HELD_INITIAL;
-					button_repeat_timestamp = getSysTime();
+					button_repeat_timestamp = clock();
 					gui_button_repeat = gui_keys[i];
 					return key_to_cursor(gui_keys[i]);
 				}
@@ -339,31 +322,27 @@ gui_action_type get_gui_input(void)
 		case BUTTON_HELD_INITIAL:
 		case BUTTON_HELD_REPEAT:
 			// If the key that was being held isn't anymore...
-			if (!(inputdata.key & gui_button_repeat))
-			{
+			if (!(inputdata.buttons & gui_button_repeat)) {
 				button_repeat_state = BUTTON_NOT_HELD;
 				// Go see if another key is held (try #2)
 				break;
 			}
 			else
 			{
-				unsigned int IsRepeatReady = getSysTime() - button_repeat_timestamp >= (button_repeat_state == BUTTON_HELD_INITIAL ? BUTTON_REPEAT_START : BUTTON_REPEAT_CONTINUE);
-				if (!IsRepeatReady)
-				{
+				bool IsRepeatReady = clock() - button_repeat_timestamp >= (button_repeat_state == BUTTON_HELD_INITIAL ? BUTTON_REPEAT_START : BUTTON_REPEAT_CONTINUE);
+				if (!IsRepeatReady) {
 					// Temporarily turn off the key.
 					// It's not its turn to be repeated.
-					inputdata.key &= ~gui_button_repeat;
+					inputdata.buttons &= ~gui_button_repeat;
 				}
 				
 				// Pick the first pressed button out of the gui_keys array.
-				for (i = 0; i < sizeof(gui_keys) / sizeof(gui_keys[0]); i++)
-				{
-					if (inputdata.key & gui_keys[i])
-					{
+				for (i = 0; i < sizeof(gui_keys) / sizeof(gui_keys[0]); i++) {
+					if (inputdata.buttons & gui_keys[i]) {
 						// If it's the held key,
 						// it's now repeating quickly.
 						button_repeat_state = gui_keys[i] == gui_button_repeat ? BUTTON_HELD_REPEAT : BUTTON_HELD_INITIAL;
-						button_repeat_timestamp = getSysTime();
+						button_repeat_timestamp = clock();
 						gui_button_repeat = gui_keys[i];
 						return key_to_cursor(gui_keys[i]);
 					}
@@ -377,173 +356,127 @@ gui_action_type get_gui_input(void)
 	}
 }
 
-/*--------------------------------------------------------
-	Wait any key in [key_list] pressed
-	if key_list == NULL, return at any key pressed
---------------------------------------------------------*/
-unsigned int wait_Anykey_press(unsigned int key_list)
-{
-	unsigned int key;
-
-	while(1)
-	{
-		key = getKey();
-		if(key) {
-			if(0 == key_list) break;
-			else if(key & key_list) break;
-		}
-	}
-
-	return key;
-}
-
-/*--------------------------------------------------------
-	Wait all key in [key_list] released
-	if key_list == NULL, return at all key released
---------------------------------------------------------*/
-void wait_Allkey_release(unsigned int key_list)
-{
-	unsigned int key;
-    struct key_buf inputdata;
-
-	while(1)
-	{
-		ds2_getrawInput(&inputdata);
-		key = inputdata.key;
-
-		if(0 == key) break;
-		else if(!key_list) continue;
-		else if(0 == (key_list & key)) break;
-	}
-}
-
 static char ProgressAction[64];
-static char ProgressFilename[MAX_PATH + 1];
+static char ProgressFilename[PATH_MAX + 1];
 static unsigned int ProgressCurrentFile; // 1-based
 static unsigned int ProgressTotalFiles;
 static unsigned int ProgressTotalSize;
 static unsigned int ProgressDoneSize;
-static unsigned int LastProgressUpdateTime; // getSysTime() units: 42.667 us
+static clock_t LastProgressUpdateTime;
 
-void InitProgress (char *Action, char *Filename, unsigned int TotalSize)
+void InitProgress(const char *Action, const char *Filename, unsigned int TotalSize)
 {
-    strcpy(ProgressAction, Action);
-    strcpy(ProgressFilename, Filename);
-    ProgressTotalSize = TotalSize;
-    LastProgressUpdateTime = 0;
+	strcpy(ProgressAction, Action);
+	strcpy(ProgressFilename, Filename);
+	ProgressTotalSize = TotalSize;
+	LastProgressUpdateTime = 0;
 
-    UpdateProgress (0);
+	UpdateProgress(0);
 }
 
-void InitProgressMultiFile (char *Action, char *Filename, unsigned int TotalFiles)
+void InitProgressMultiFile(const char *Action, const char *Filename, unsigned int TotalFiles)
 {
-    strcpy(ProgressAction, Action);
-    strcpy(ProgressFilename, Filename);
-    ProgressTotalFiles = TotalFiles;
+	strcpy(ProgressAction, Action);
+	strcpy(ProgressFilename, Filename);
+	ProgressTotalFiles = TotalFiles;
 }
 
-void UpdateProgressChangeFile (unsigned int CurrentFile, char *Filename, unsigned int TotalSize)
+void UpdateProgressChangeFile(unsigned int CurrentFile, const char *Filename, unsigned int TotalSize)
 {
-    ProgressCurrentFile = CurrentFile;
-    strcpy(ProgressFilename, Filename);
-    ProgressTotalSize = TotalSize;
-    LastProgressUpdateTime = 0; // force an update when changing files
-    // if this is too slow, move it to InitProgressMultiFile above
+	ProgressCurrentFile = CurrentFile;
+	strcpy(ProgressFilename, Filename);
+	ProgressTotalSize = TotalSize;
+	LastProgressUpdateTime = 0; // force an update when changing files
+	// if this is too slow, move it to InitProgressMultiFile above
 
-    UpdateProgressMultiFile (0);
+	UpdateProgressMultiFile(0);
 }
 
 #define PROGRESS_BAR_WIDTH (ICON_PROGRESS.x)
 
-void UpdateProgress (unsigned int DoneSize)
+void UpdateProgress(unsigned int DoneSize)
 {
-    ProgressDoneSize = DoneSize;
+	ProgressDoneSize = DoneSize;
 
-    unsigned int Now = getSysTime();
-    if (Now - LastProgressUpdateTime >= 5859 /* 250 milliseconds in 42.667 us units */
-        || ProgressDoneSize == ProgressTotalSize /* force update if done */)
-    {
-        LastProgressUpdateTime = Now;
-        // If you want to add skinning support for the upper screen, edit this.
-        ds2_clearScreen(UP_SCREEN, RGB15(0, 0, 0));
+	clock_t Now = clock();
+	if (Now - LastProgressUpdateTime >= CLOCKS_PER_SEC / 4 /* 250 milliseconds */
+	 || ProgressDoneSize == ProgressTotalSize /* force update if done */) {
+		LastProgressUpdateTime = Now;
+		// If you want to add skinning support for the upper screen, edit this.
+		DS2_FillScreen(DS_ENGINE_MAIN, COLOR_BLACK);
 
-        draw_string_vcenter(up_screen_addr, 1, 48, 254, RGB15(31, 31, 31), ProgressAction);
+		draw_string_vcenter(DS2_GetMainScreen(), 1, 48, 254, COLOR_WHITE, ProgressAction);
 
-        draw_string_vcenter(up_screen_addr, 1, 64, 254, RGB15(31, 31, 31), ProgressFilename);
+		draw_string_vcenter(DS2_GetMainScreen(), 1, 64, 254, COLOR_WHITE, ProgressFilename);
 
-        char ByteCountLine[128];
-        sprintf(ByteCountLine, msg[FMT_PROGRESS_KIBIBYTE_COUNT], ProgressDoneSize / 1024, ProgressTotalSize / 1024);
-        draw_string_vcenter(up_screen_addr, 1, 114, 254, RGB15(31, 31, 31), ByteCountLine);
+		char ByteCountLine[128];
+		sprintf(ByteCountLine, msg[FMT_PROGRESS_KIBIBYTE_COUNT], ProgressDoneSize / 1024, ProgressTotalSize / 1024);
+		draw_string_vcenter(DS2_GetMainScreen(), 1, 114, 254, COLOR_WHITE, ByteCountLine);
 
-        draw_string_vcenter(up_screen_addr, 1, 130, 254, RGB15(31, 31, 31), msg[MSG_PROGRESS_CANCEL_WITH_B]);
+		draw_string_vcenter(DS2_GetMainScreen(), 1, 130, 254, COLOR_WHITE, msg[MSG_PROGRESS_CANCEL_WITH_B]);
 
-        unsigned int PixelsDone = (unsigned int) (((unsigned long long) ProgressDoneSize * (unsigned long long) PROGRESS_BAR_WIDTH) / (unsigned long long) ProgressTotalSize);
+		unsigned int PixelsDone = (unsigned int) (((unsigned long long) ProgressDoneSize * (unsigned long long) PROGRESS_BAR_WIDTH) / (unsigned long long) ProgressTotalSize);
 
-        show_icon(up_screen_addr, &ICON_NPROGRESS, (SCREEN_WIDTH - PROGRESS_BAR_WIDTH) / 2, 80);
-        show_partial_icon_horizontal(up_screen_addr, &ICON_PROGRESS, (SCREEN_WIDTH - PROGRESS_BAR_WIDTH) / 2, 80, PixelsDone);
+		show_icon(DS2_GetMainScreen(), &ICON_NPROGRESS, (DS_SCREEN_WIDTH - PROGRESS_BAR_WIDTH) / 2, 80);
+		show_partial_icon_horizontal(DS2_GetMainScreen(), &ICON_PROGRESS, (DS_SCREEN_WIDTH - PROGRESS_BAR_WIDTH) / 2, 80, PixelsDone);
 
-        ds2_flipScreen(UP_SCREEN, UP_SCREEN_UPDATE_METHOD);
-    }
+		DS2_FlipMainScreen();
+	}
 }
 
-void UpdateProgressMultiFile (unsigned int DoneSize)
+void UpdateProgressMultiFile(unsigned int DoneSize)
 {
-    ProgressDoneSize = DoneSize;
+	ProgressDoneSize = DoneSize;
 
-    unsigned int Now = getSysTime();
-    if (Now - LastProgressUpdateTime >= 5859 /* 250 milliseconds in 42.667 us units */
-        || ((ProgressDoneSize == ProgressTotalSize)
-         && (ProgressCurrentFile == ProgressTotalFiles)) /* force update if done */)
-    {
-        LastProgressUpdateTime = Now;
-        // If you want to add skinning support for the upper screen, edit this.
-        ds2_clearScreen(UP_SCREEN, RGB15(0, 0, 0));
+	clock_t Now = clock();
+	if (Now - LastProgressUpdateTime >= CLOCKS_PER_SEC / 4 /* 250 milliseconds */
+	 || ((ProgressDoneSize == ProgressTotalSize)
+	  && (ProgressCurrentFile == ProgressTotalFiles)) /* force update if done */) {
+		LastProgressUpdateTime = Now;
+		// If you want to add skinning support for the upper screen, edit this.
+		DS2_FillScreen(DS_ENGINE_MAIN, COLOR_BLACK);
 
-        draw_string_vcenter(up_screen_addr, 1, 48, 254, RGB15(31, 31, 31), ProgressAction);
+		draw_string_vcenter(DS2_GetMainScreen(), 1, 48, 254, COLOR_WHITE, ProgressAction);
 
-        draw_string_vcenter(up_screen_addr, 1, 64, 254, RGB15(31, 31, 31), ProgressFilename);
+		draw_string_vcenter(DS2_GetMainScreen(), 1, 64, 254, COLOR_WHITE, ProgressFilename);
 
-        char ByteCountLine[128];
-        sprintf(ByteCountLine, msg[FMT_PROGRESS_ARCHIVE_MEMBER_AND_KIBIBYTE_COUNT], ProgressCurrentFile, ProgressTotalFiles, ProgressDoneSize / 1024, ProgressTotalSize / 1024);
-        draw_string_vcenter(up_screen_addr, 1, 114, 254, RGB15(31, 31, 31), ByteCountLine);
+		char ByteCountLine[128];
+		sprintf(ByteCountLine, msg[FMT_PROGRESS_ARCHIVE_MEMBER_AND_KIBIBYTE_COUNT], ProgressCurrentFile, ProgressTotalFiles, ProgressDoneSize / 1024, ProgressTotalSize / 1024);
+		draw_string_vcenter(DS2_GetMainScreen(), 1, 114, 254, COLOR_WHITE, ByteCountLine);
 
-        draw_string_vcenter(up_screen_addr, 1, 130, 254, RGB15(31, 31, 31), msg[MSG_PROGRESS_CANCEL_WITH_B]);
+		draw_string_vcenter(DS2_GetMainScreen(), 1, 130, 254, COLOR_WHITE, msg[MSG_PROGRESS_CANCEL_WITH_B]);
 
-        unsigned int PixelsDone = (unsigned int) (((unsigned long long) ProgressDoneSize * (unsigned long long) PROGRESS_BAR_WIDTH) / (unsigned long long) ProgressTotalSize);
+		unsigned int PixelsDone = (unsigned int) (((unsigned long long) ProgressDoneSize * (unsigned long long) PROGRESS_BAR_WIDTH) / (unsigned long long) ProgressTotalSize);
 
-        show_icon(up_screen_addr, &ICON_NPROGRESS, (SCREEN_WIDTH - PROGRESS_BAR_WIDTH) / 2, 80);
-        show_partial_icon_horizontal(up_screen_addr, &ICON_PROGRESS, (SCREEN_WIDTH - PROGRESS_BAR_WIDTH) / 2, 80, PixelsDone);
+		show_icon(DS2_GetMainScreen(), &ICON_NPROGRESS, (DS_SCREEN_WIDTH - PROGRESS_BAR_WIDTH) / 2, 80);
+		show_partial_icon_horizontal(DS2_GetMainScreen(), &ICON_PROGRESS, (DS_SCREEN_WIDTH - PROGRESS_BAR_WIDTH) / 2, 80, PixelsDone);
 
-        ds2_flipScreen(UP_SCREEN, UP_SCREEN_UPDATE_METHOD);
-    }
+		DS2_FlipMainScreen();
+	}
 }
 
-void InitMessage (void)
+void InitMessage(void)
 {
-    ds2_setCPUclocklevel(0);
+	DS2_LowClockSpeed();
+	DS2_SetScreenBacklights(DS_SCREEN_BOTH);
 
-    mdelay(100); // to prevent ds2_setBacklight from crashing
-    ds2_setBacklight(3);
-
-    draw_message(down_screen_addr, NULL, 28, 31, 227, 165, COLOR_BG);
+	draw_message_box(DS2_GetSubScreen());
 }
 
-void FiniMessage (void)
+void FiniMessage(void)
 {
-    mdelay(100); // to prevent ds2_setBacklight from crashing
-    ds2_setBacklight(2);
-
-    wait_Allkey_release(0);
-    ds2_setCPUclocklevel(13);
+	DS2_SetScreenBacklights(DS_SCREEN_UPPER);
+	DS2_AwaitNoButtons();
+	DS2_HighClockSpeed();
 }
 
-unsigned int ReadInputDuringCompression ()
+uint16_t ReadInputDuringCompression(void)
 {
-    struct key_buf inputdata;
+	struct DS_InputState input;
 
-	ds2_getrawInput(&inputdata);
+	DS2_GetInputState(&input);
 
-	return inputdata.key & ~(KEY_LID);
+	return input.buttons & ~DS_BUTTON_LID;
 }
 
 void change_ext(char *src, char *buffer, char *extension)
@@ -557,279 +490,142 @@ void change_ext(char *src, char *buffer, char *extension)
 		strcpy(dot_position, extension);
 }
 
+struct selector_entry {
+	char* name;
+	bool  is_dir;
+};
+
 /*--------------------------------------------------------
 	Sort function
 --------------------------------------------------------*/
-static int nameSortFunction(char* a, char* b)
+static int name_sort(const void* a, const void* b)
 {
-    // ".." sorts before everything except itself.
-    bool aIsParent = strcmp(a, "..") == 0;
-    bool bIsParent = strcmp(b, "..") == 0;
-
-    if (aIsParent && bIsParent)
-        return 0;
-    else if (aIsParent) // Sorts before
-        return -1;
-    else if (bIsParent) // Sorts after
-        return 1;
-    else
-        return strcasecmp(a, b);
+	return strcasecmp(((const struct selector_entry*) a)->name,
+	                  ((const struct selector_entry*) b)->name);
 }
 
 /*
- * Determines whether a portion of a vector is sorted.
- * Input assertions: 'from' and 'to' are valid indices into data. 'to' can be
- *   the maximum value for the type 'unsigned int'.
- * Input: 'data', data vector, possibly sorted.
- *        'sortFunction', function determining the sort order of two elements.
- *        'from', index of the first element in the range to test.
- *        'to', index of the last element in the range to test.
- * Output: true if, for any valid index 'i' such as from <= i < to,
- *   data[i] < data[i + 1].
- *   true if the range is one or no elements, or if from > to.
- *   false otherwise.
+ * Shows a file selector interface.
+ *
+ * Input:
+ *   exts: An array of const char* specifying the file extension filter.
+ *     If the array is NULL, or the first entry is NULL, all files are shown
+ *     regardless of extension.
+ *     Otherwise, only files whose extensions match any of the entries, which
+ *     must start with '.', are shown.
+ * Input/output:
+ *   dir: On entry to the function, the initial directory to be used.
+ *     On exit, if a file was selected, the directory containing the selected
+ *     file; otherwise, unchanged.
+ * Output:
+ *   result_name: If a file was selected, this is updated with the name of the
+ *     selected file without its path; otherwise, unchanged.
+ * Returns:
+ *   0: a file was selected.
+ *   -1: the user exited the selector without selecting a file.
+ *   < -1: an error occurred.
  */
-static bool isSorted(char** data, int (*sortFunction) (char*, char*), unsigned int from, unsigned int to)
+int32_t load_file(const char **exts, char *result_name, char *dir)
 {
-    if (from >= to)
-        return true;
-
-    char** prev = &data[from];
-	unsigned int i;
-    for (i = from + 1; i < to; i++)
-    {
-        if ((*sortFunction)(*prev, data[i]) > 0)
-            return false;
-        prev = &data[i];
-    }
-    if ((*sortFunction)(*prev, data[to]) > 0)
-        return false;
-
-    return true;
-}
-
-/*
- * Chooses a pivot for Quicksort. Uses the median-of-three search algorithm
- * first proposed by Robert Sedgewick.
- * Input assertions: 'from' and 'to' are valid indices into data. 'to' can be
- *   the maximum value for the type 'unsigned int'.
- * Input: 'data', data vector.
- *        'sortFunction', function determining the sort order of two elements.
- *        'from', index of the first element in the range to be sorted.
- *        'to', index of the last element in the range to be sorted.
- * Output: a valid index into data, between 'from' and 'to' inclusive.
- */
-static unsigned int choosePivot(char** data, int (*sortFunction) (char*, char*), unsigned int from, unsigned int to)
-{
-    // The highest of the two extremities is calculated first.
-    unsigned int highest = ((*sortFunction)(data[from], data[to]) > 0)
-        ? from
-        : to;
-    // Then the lowest of that highest extremity and the middle
-    // becomes the pivot.
-    return ((*sortFunction)(data[from + (to - from) / 2], data[highest]) < 0)
-        ? (from + (to - from) / 2)
-        : highest;
-}
-
-/*
- * Partition function for Quicksort. Moves elements such that those that are
- * less than the pivot end up before it in the data vector.
- * Input assertions: 'from', 'to' and 'pivotIndex' are valid indices into data.
- *   'to' can be the maximum value for the type 'unsigned int'.
- * Input: 'data', data vector.
- *        'metadata', data describing the values in 'data'.
- *        'sortFunction', function determining the sort order of two elements.
- *        'from', index of the first element in the range to sort.
- *        'to', index of the last element in the range to sort.
- *        'pivotIndex', index of the value chosen as the pivot.
- * Output: the index of the value chosen as the pivot after it has been moved
- *   after all the values that are less than it.
- */
-static unsigned int partition(char** data, u8* metadata, int (*sortFunction) (char*, char*), unsigned int from, unsigned int to, unsigned int pivotIndex)
-{
-    char* pivotValue = data[pivotIndex];
-    data[pivotIndex] = data[to];
-    data[to] = pivotValue;
-    {
-        u8 tM = metadata[pivotIndex];
-        metadata[pivotIndex] = metadata[to];
-        metadata[to] = tM;
-    }
-
-    unsigned int storeIndex = from;
-	unsigned int i;
-    for (i = from; i < to; i++)
-    {
-        if ((*sortFunction)(data[i], pivotValue) < 0)
-        {
-            char* tD = data[storeIndex];
-            data[storeIndex] = data[i];
-            data[i] = tD;
-            u8 tM = metadata[storeIndex];
-            metadata[storeIndex] = metadata[i];
-            metadata[i] = tM;
-            ++storeIndex;
-        }
-    }
-
-    {
-        char* tD = data[to];
-        data[to] = data[storeIndex];
-        data[storeIndex] = tD;
-        u8 tM = metadata[to];
-        metadata[to] = metadata[storeIndex];
-        metadata[storeIndex] = tM;
-    }
-    return storeIndex;
-}
-
-/*
- * Sorts an array while keeping metadata in sync.
- * This sort is unstable and its average performance is
- *   O(data.size() * log2(data.size()).
- * Input assertions: for any valid index 'i' in data, index 'i' is valid in
- *   metadata. 'from' and 'to' are valid indices into data. 'to' can be
- *   the maximum value for the type 'unsigned int'.
- * Invariant: index 'i' in metadata describes index 'i' in data.
- * Input: 'data', data to sort.
- *        'metadata', data describing the values in 'data'.
- *        'sortFunction', function determining the sort order of two elements.
- *        'from', index of the first element in the range to sort.
- *        'to', index of the last element in the range to sort.
- */
-static void quickSort(char** data, u8* metadata, int (*sortFunction) (char*, char*), unsigned int from, unsigned int to)
-{
-    if (isSorted(data, sortFunction, from, to))
-        return;
-
-    unsigned int pivotIndex = choosePivot(data, sortFunction, from, to);
-    unsigned int newPivotIndex = partition(data, metadata, sortFunction, from, to, pivotIndex);
-    if (newPivotIndex > 0)
-        quickSort(data, metadata, sortFunction, from, newPivotIndex - 1);
-    if (newPivotIndex < to)
-        quickSort(data, metadata, sortFunction, newPivotIndex + 1, to);
-}
-
-static void strupr(char *str)
-{
-    while(*str)
-    {
-        if(*str <= 0x7A && *str >= 0x61) *str -= 0x20;
-        str++;
-    }
-}
-
-// ******************************************************************************
-//	get file list
-// ******************************************************************************
-
-s32 load_file(char **wildcards, char *result, char *default_dir_name)
-{
-	if (default_dir_name == NULL || *default_dir_name == '\0')
+	if (dir == NULL || *dir == '\0')
 		return -4;
 
-	char CurrentDirectory[MAX_PATH];
-	u32  ContinueDirectoryRead = 1;
-	u32  ReturnValue;
-	u32  i;
+	char cur_dir[PATH_MAX];
+	bool continue_dir = true;
+	int32_t ret;
+	size_t i;
+	void* scrollers[FILE_LIST_ROWS + 1 /* for the directory name */];
 
-	strcpy(CurrentDirectory, default_dir_name);
+	strcpy(cur_dir, dir);
 
-	while (ContinueDirectoryRead)
-	{
+	for (i = 0; i < FILE_LIST_ROWS + 1; i++) {
+		scrollers[i] = NULL;
+	}
+
+	while (continue_dir) {
+		DS2_HighClockSpeed();
 		// Read the current directory. This loop is continued every time the
 		// current directory changes.
-		ds2_setCPUclocklevel(13);
 
-		show_icon(down_screen_addr, &ICON_SUBBG, 0, 0);
-		show_icon(down_screen_addr, &ICON_TITLE, 0, 0);
-		show_icon(down_screen_addr, &ICON_TITLEICON, TITLE_ICON_X, TITLE_ICON_Y);
-		PRINT_STRING_BG(down_screen_addr, msg[MSG_FILE_MENU_LOADING_LIST], COLOR_WHITE, COLOR_TRANS, 49, 10);
-		ds2_flipScreen(DOWN_SCREEN, DOWN_SCREEN_UPDATE_METHOD);
+		show_icon(DS2_GetSubScreen(), &ICON_SUBBG, 0, 0);
+		show_icon(DS2_GetSubScreen(), &ICON_TITLE, 0, 0);
+		show_icon(DS2_GetSubScreen(), &ICON_TITLEICON, TITLE_ICON_X, TITLE_ICON_Y);
+		PRINT_STRING_BG(DS2_GetSubScreen(), msg[MSG_FILE_MENU_LOADING_LIST], COLOR_WHITE, COLOR_TRANS, 49, 10);
+		DS2_UpdateScreen(DS_ENGINE_SUB);
+		DS2_AwaitScreenUpdate(DS_ENGINE_SUB);
 
-		u32 LastCountDisplayTime = getSysTime();
+		clock_t last_display = clock();
 
-		char** EntryNames = NULL;
-		u8*    EntryDirectoryFlags = NULL;
-		DIR*   CurrentDirHandle = NULL;
-		u32    EntryCount = 1, EntryCapacity = 4 /* initial */;
+		struct selector_entry* entries;
+		DIR* cur_dir_handle = NULL;
+		size_t count = 1, capacity = 4 /* initially */;
 
-		EntryNames = (char**) malloc(EntryCapacity * sizeof(char*));
-		if (EntryNames == NULL)
-		{
-			ReturnValue = -2;
-			ContinueDirectoryRead = 0;
+		entries = malloc(capacity * sizeof(struct selector_entry));
+		if (entries == NULL) {
+			ret = -2;
+			continue_dir = false;
 			goto cleanup;
 		}
 
-		EntryDirectoryFlags = (u8*) malloc(EntryCapacity * sizeof(u8));
-		if (EntryDirectoryFlags == NULL)
-		{
-			ReturnValue = -2;
-			ContinueDirectoryRead = 0;
+		entries[0].name = strdup("..");
+		if (entries[0].name == NULL) {
+			ret = -1;
+			continue_dir = 0;
+			goto cleanup;
+		}
+		entries[0].is_dir = true;
+
+		cur_dir_handle = opendir(cur_dir);
+		if (cur_dir_handle == NULL) {
+			ret = -1;
+			continue_dir = 0;
 			goto cleanup;
 		}
 
-		CurrentDirHandle = opendir(CurrentDirectory);
-		if(CurrentDirHandle == NULL) {
-			ReturnValue = -1;
-			ContinueDirectoryRead = 0;
-			goto cleanup;
-		}
+		struct dirent* cur_entry_handle;
+		struct stat    st;
 
-		EntryNames[0] = "..";
-		EntryDirectoryFlags[0] = 1;
-
-		dirent*     CurrentEntryHandle;
-		struct stat Stat;
-
-		while((CurrentEntryHandle = readdir_ex(CurrentDirHandle, &Stat)) != NULL)
+		while ((cur_entry_handle = readdir(cur_dir_handle)) != NULL)
 		{
-			u32   Now = getSysTime();
-			u32   AddEntry = 0;
-			char* Name = CurrentEntryHandle->d_name;
+			clock_t now = clock();
+			bool add = false;
+			char* name = cur_entry_handle->d_name;
+			char path[PATH_MAX];
 
-			if (Now >= LastCountDisplayTime + 5859 /* 250 ms */)
-			{
-				LastCountDisplayTime = Now;
+			snprintf(path, PATH_MAX, "%s/%s", cur_dir, name);
+			stat(path, &st);
 
-				show_icon(down_screen_addr, &ICON_TITLE, 0, 0);
-				show_icon(down_screen_addr, &ICON_TITLEICON, TITLE_ICON_X, TITLE_ICON_Y);
-				char Line[384], Element[128];
-				strcpy(Line, msg[MSG_FILE_MENU_LOADING_LIST]);
-				sprintf(Element, " (%u)", EntryCount);
-				strcat(Line, Element);
-				PRINT_STRING_BG(down_screen_addr, Line, COLOR_WHITE, COLOR_TRANS, 49, 10);
-				ds2_flipScreen(DOWN_SCREEN, DOWN_SCREEN_UPDATE_METHOD);
+			if (now >= last_display + CLOCKS_PER_SEC / 4) {
+				last_display = now;
+
+				show_icon(DS2_GetSubScreen(), &ICON_TITLE, 0, 0);
+				show_icon(DS2_GetSubScreen(), &ICON_TITLEICON, TITLE_ICON_X, TITLE_ICON_Y);
+				char line[384], element[16];
+				strcpy(line, msg[MSG_FILE_MENU_LOADING_LIST]);
+				sprintf(element, " (%" PRIu32 ")", count);
+				strcat(line, element);
+				PRINT_STRING_BG(DS2_GetSubScreen(), line, COLOR_WHITE, COLOR_TRANS, 49, 10);
+				DS2_UpdateScreenPart(DS_ENGINE_SUB, 0, ICON_TITLEICON.y);
+				DS2_AwaitScreenUpdate(DS_ENGINE_SUB);
 			}
 
-			if(S_ISDIR(Stat.st_mode))
-			{
+			if (S_ISDIR(st.st_mode)) {
 				// Add directories no matter what, except for the special
 				// ones, "." and "..".
-				if (!(Name[0] == '.' &&
-				    (Name[1] == '\0' || (Name[1] == '.' && Name[2] == '\0'))
-				   ))
-				{
-					AddEntry = 1;
+				if (!(name[0] == '.' &&
+				    (name[1] == '\0' || (name[1] == '.' && name[2] == '\0')))) {
+					add = true;
 				}
-			}
-			else
-			{
-				if (wildcards[0] == NULL) // Show every file
-					AddEntry = 1;
-				else
-				{
+			} else {
+				if (exts == NULL || exts[0] == NULL) // Show every file
+					add = true;
+				else {
 					// Add files only if their extension is in the list.
-					char* Extension = strrchr(Name, '.');
-					if (Extension != NULL)
-					{
-						for(i = 0; wildcards[i] != NULL; i++)
-						{
-							if(strcasecmp(Extension, wildcards[i]) == 0)
-							{
-								AddEntry = 1;
+					char* ext = strrchr(name, '.');
+					if (ext != NULL) {
+						for (i = 0; exts[i] != NULL; i++) {
+							if (strcasecmp(ext, exts[i]) == 0) {
+								add = true;
 								break;
 							}
 						}
@@ -837,327 +633,268 @@ s32 load_file(char **wildcards, char *result, char *default_dir_name)
 				}
 			}
 
-			if (AddEntry)
-			{
-				// Ensure we have enough capacity in the char* array first.
-				if (EntryCount == EntryCapacity)
-				{
-					u32 NewCapacity = EntryCapacity * 2;
-					void* NewEntryNames = realloc(EntryNames, NewCapacity * sizeof(char*));
-					if (NewEntryNames == NULL)
-					{
-						ReturnValue = -2;
-						ContinueDirectoryRead = 0;
+			if (add) {
+				// Ensure we have enough capacity in the selector_entry array.
+				if (count == capacity) {
+					struct selector_entry* new_entries = realloc(entries, capacity * 2 * sizeof(struct selector_entry));
+					if (new_entries == NULL) {
+						ret = -2;
+						continue_dir = false;
 						goto cleanup;
+					} else {
+						entries = new_entries;
+						capacity *= 2;
 					}
-					else
-						EntryNames = NewEntryNames;
-
-					void* NewEntryDirectoryFlags = realloc(EntryDirectoryFlags, NewCapacity * sizeof(u8));
-					if (NewEntryDirectoryFlags == NULL)
-					{
-						ReturnValue = -2;
-						ContinueDirectoryRead = 0;
-						goto cleanup;
-					}
-					else
-						EntryDirectoryFlags = NewEntryDirectoryFlags;
-
-					EntryCapacity = NewCapacity;
 				}
 
 				// Then add the entry.
-				EntryNames[EntryCount] = malloc(strlen(Name) + 1);
-				if (EntryNames[EntryCount] == NULL)
-				{
-					ReturnValue = -2;
-					ContinueDirectoryRead = 0;
+				entries[count].name = strdup(name);
+				if (entries[count].name == NULL) {
+					ret = -2;
+					continue_dir = 0;
 					goto cleanup;
 				}
 
-				strcpy(EntryNames[EntryCount], Name);
-				if (S_ISDIR(Stat.st_mode))
-					EntryDirectoryFlags[EntryCount] = 1;
-				else
-					EntryDirectoryFlags[EntryCount] = 0;
+				entries[count].is_dir = S_ISDIR(st.st_mode) ? true : false;
 
-				EntryCount++;
+				count++;
 			}
 		}
 
-		show_icon(down_screen_addr, &ICON_TITLE, 0, 0);
-		show_icon(down_screen_addr, &ICON_TITLEICON, TITLE_ICON_X, TITLE_ICON_Y);
-		PRINT_STRING_BG(down_screen_addr, msg[MSG_FILE_MENU_SORTING_LIST], COLOR_WHITE, COLOR_TRANS, 49, 10);
-		ds2_flipScreen(DOWN_SCREEN, DOWN_SCREEN_UPDATE_METHOD);
+		show_icon(DS2_GetSubScreen(), &ICON_TITLE, 0, 0);
+		show_icon(DS2_GetSubScreen(), &ICON_TITLEICON, TITLE_ICON_X, TITLE_ICON_Y);
+		PRINT_STRING_BG(DS2_GetSubScreen(), msg[MSG_FILE_MENU_SORTING_LIST], COLOR_WHITE, COLOR_TRANS, 49, 10);
+		DS2_UpdateScreenPart(DS_ENGINE_SUB, 0, ICON_TITLEICON.y);
+		DS2_AwaitScreenUpdate(DS_ENGINE_SUB);
 
-		quickSort(EntryNames, EntryDirectoryFlags, nameSortFunction, 1, EntryCount - 1);
-		ds2_setCPUclocklevel(0);
+		/* skip the first entry when sorting, which is always ".." */
+		qsort(&entries[1], count - 1, sizeof(struct selector_entry), name_sort);
+		DS2_LowClockSpeed();
 
-		u32 ContinueInput = 1;
-		s32 SelectedIndex = 0;
-		u32 DirectoryScrollDirection = 0x8000; // First scroll to the left
-		s32 EntryScrollValue = 0;
-		u32 ModifyScrollers = 1;
-		u32 ScrollerCount = 0;
+		bool continue_input = true;
+		size_t sel_entry = 0, prev_sel_entry = 1 /* different to show scrollers to start */;
+		uint32_t dir_scroll = 0x8000; // First scroll to the left
+		int32_t entry_scroll = 0;
 
-		draw_hscroll_init(down_screen_addr, 49, 10, 199, COLOR_TRANS,
-			COLOR_WHITE, CurrentDirectory);
-		ScrollerCount++;
+		scrollers[0] = draw_hscroll_init(DS2_GetSubScreen(), 49, 10, 199, COLOR_TRANS,
+			COLOR_WHITE, cur_dir);
+
+		if (scrollers[0] == NULL) {
+			ret = -2;
+			continue_dir = false;
+			goto cleanupScrollers;
+		}
 
 		// Show the current directory and get input. This loop is continued
 		// every frame, because the current directory scrolls atop the screen.
 
-		while (ContinueDirectoryRead && ContinueInput)
-		{
+		while (continue_dir && continue_input) {
 			// Try to use a row set such that the selected entry is in the
 			// middle of the screen.
-			s32 LastEntry = SelectedIndex + FILE_LIST_ROWS / 2;
+			size_t last_entry = sel_entry + FILE_LIST_ROWS / 2, first_entry;
 
 			// If the last row is out of bounds, put it back in bounds.
 			// (In this case, the user has selected an entry in the last
 			// FILE_LIST_ROWS / 2.)
-			if (LastEntry >= EntryCount)
-				LastEntry = EntryCount - 1;
+			if (last_entry >= count)
+				last_entry = count - 1;
 
-			s32 FirstEntry = LastEntry - (FILE_LIST_ROWS - 1);
-
-			// If the first row is out of bounds, put it back in bounds.
-			// (In this case, the user has selected an entry in the first
-			// FILE_LIST_ROWS / 2, or there are fewer than FILE_LIST_ROWS
-			// entries.)
-			if (FirstEntry < 0)
-			{
-				FirstEntry = 0;
-
+			if (last_entry < FILE_LIST_ROWS - 1) {
+				/* Move to the first entry unconditionally. */
+				first_entry = 0;
 				// If there are more than FILE_LIST_ROWS / 2 files,
 				// we need to enlarge the first page.
-				LastEntry = FILE_LIST_ROWS - 1;
-				if (LastEntry >= EntryCount) // No...
-					LastEntry = EntryCount - 1;
-			}
+				last_entry = FILE_LIST_ROWS - 1;
+				if (last_entry >= count) // No...
+					last_entry = count - 1;
+			} else
+				first_entry = last_entry - (FILE_LIST_ROWS - 1);
 
 			// Update scrollers.
 			// a) If a different item has been selected, remake entry
 			//    scrollers, resetting the formerly selected entry to the
 			//    start and updating the selection color.
-			if (ModifyScrollers)
-			{
+			if (sel_entry != prev_sel_entry) {
 				// Preserve the directory scroller.
-				for (; ScrollerCount > 1; ScrollerCount--)
-					draw_hscroll_over(ScrollerCount - 1);
-				for (i = FirstEntry; i <= LastEntry; i++)
-				{
-					u16 color = (SelectedIndex == i)
+				for (i = 1; i < FILE_LIST_ROWS + 1; i++) {
+					draw_hscroll_over(scrollers[i]);
+					scrollers[i] = NULL;
+				}
+				for (i = first_entry; i <= last_entry; i++) {
+					uint16_t color = (i == sel_entry)
 						? COLOR_ACTIVE_ITEM
 						: COLOR_INACTIVE_ITEM;
-					if (hscroll_init(down_screen_addr, FILE_SELECTOR_NAME_X, GUI_ROW1_Y + (i - FirstEntry) * GUI_ROW_SY + TEXT_OFFSET_Y, FILE_SELECTOR_NAME_SX,
-						COLOR_TRANS, color, EntryNames[i]) < 0)
-					{
-						ReturnValue = -2;
-						ContinueDirectoryRead = 0;
+					scrollers[i - first_entry + 1] = hscroll_init(DS2_GetSubScreen(),
+						FILE_SELECTOR_NAME_X,
+						GUI_ROW1_Y + (i - first_entry) * GUI_ROW_SY + TEXT_OFFSET_Y,
+						FILE_SELECTOR_NAME_SX,
+						COLOR_TRANS,
+						color,
+						entries[i].name);
+					if (scrollers[i - first_entry + 1] == NULL) {
+						ret = -2;
+						continue_dir = 0;
 						goto cleanupScrollers;
-					}
-					else
-					{
-						ScrollerCount++;
 					}
 				}
 
-				ModifyScrollers = 0;
+				prev_sel_entry = sel_entry;
 			}
 
 			// b) Must we update the directory scroller?
-			if ((DirectoryScrollDirection & 0xFF) >= 0x20)
-			{
-				if(DirectoryScrollDirection & 0x8000)	//scroll left
-				{
-					if(draw_hscroll(0, -1) == 0) DirectoryScrollDirection = 0;	 //scroll right
+			if ((dir_scroll & 0xFF) >= 0x20) {
+				if (dir_scroll & 0x8000) {  /* scrolling to the left */
+					if (draw_hscroll(scrollers[0], -1) == 0) dir_scroll = 0;
+				} else {  /* scrolling to the right */
+					if (draw_hscroll(scrollers[0], 1) == 0) dir_scroll = 0x8000;
 				}
-				else
-				{
-					if(draw_hscroll(0, 1) == 0) DirectoryScrollDirection = 0x8000; //scroll left
-				}
-			}
-			else
-			{
+			} else {
 				// Wait one less frame before scrolling the directory again.
-				DirectoryScrollDirection++;
+				dir_scroll++;
 			}
 
 			// c) Must we scroll the current file as a result of user input?
-			if (EntryScrollValue != 0)
-			{
-				draw_hscroll(SelectedIndex - FirstEntry + 1, EntryScrollValue);
-				EntryScrollValue = 0;
+			if (entry_scroll != 0) {
+				draw_hscroll(scrollers[sel_entry - first_entry + 1], entry_scroll);
+				entry_scroll = 0;
 			}
 
 			// Draw.
 			// a) The background.
-			show_icon(down_screen_addr, &ICON_SUBBG, 0, 0);
-			show_icon(down_screen_addr, &ICON_TITLE, 0, 0);
-			show_icon(down_screen_addr, &ICON_TITLEICON, TITLE_ICON_X, TITLE_ICON_Y);
+			show_icon(DS2_GetSubScreen(), &ICON_SUBBG, 0, 0);
+			show_icon(DS2_GetSubScreen(), &ICON_TITLE, 0, 0);
+			show_icon(DS2_GetSubScreen(), &ICON_TITLEICON, TITLE_ICON_X, TITLE_ICON_Y);
 
 			// b) The selection background.
-			show_icon(down_screen_addr, &ICON_SUBSELA, SUBSELA_X, GUI_ROW1_Y + (SelectedIndex - FirstEntry) * GUI_ROW_SY + SUBSELA_OFFSET_Y);
+			show_icon(DS2_GetSubScreen(), &ICON_SUBSELA, SUBSELA_X, GUI_ROW1_Y + (sel_entry - first_entry) * GUI_ROW_SY + SUBSELA_OFFSET_Y);
 
 			// c) The scrollers.
-			for (i = 0; i < ScrollerCount; i++)
-				draw_hscroll(i, 0);
+			for (i = 0; i < FILE_LIST_ROWS + 1; i++)
+				draw_hscroll(scrollers[i], 0);
 
 			// d) The icons.
-			for (i = FirstEntry; i <= LastEntry; i++)
+			for (i = first_entry; i <= last_entry; i++)
 			{
-				struct gui_iconlist* icon;
+				struct gui_icon* icon;
 				if (i == 0)
 					icon = &ICON_DOTDIR;
-				else if (EntryDirectoryFlags[i])
+				else if (entries[i].is_dir)
 					icon = &ICON_DIRECTORY;
-				else
-				{
-					char* Extension = strrchr(EntryNames[i], '.');
-					if (Extension != NULL)
-					{
-						if (strcasecmp(Extension, ".zip") == 0 || strcasecmp(Extension, ".gz") == 0)
+				else {
+					char* ext = strrchr(entries[i].name, '.');
+					if (ext != NULL) {
+						if (strcasecmp(ext, ".zip") == 0)
 							icon = &ICON_ZIPFILE;
 						else
 							icon = &ICON_UNKNOW;
-					}
-					else
+					} else
 						icon = &ICON_UNKNOW;
 				}
 
-				show_icon(down_screen_addr, icon, FILE_SELECTOR_ICON_X, GUI_ROW1_Y + (i - FirstEntry) * GUI_ROW_SY + FILE_SELECTOR_ICON_Y);
+				show_icon(DS2_GetSubScreen(), icon, FILE_SELECTOR_ICON_X, GUI_ROW1_Y + (i - first_entry) * GUI_ROW_SY + FILE_SELECTOR_ICON_Y);
 			}
 
-			ds2_flipScreen(DOWN_SCREEN, DOWN_SCREEN_UPDATE_METHOD);
+			DS2_UpdateScreen(DS_ENGINE_SUB);
+			DS2_AwaitScreenUpdate(DS_ENGINE_SUB);
 
-			// Delay before getting the input.
-			mdelay(20);
-
-			struct key_buf inputdata;
+			struct DS_InputState inputdata;
 			gui_action_type gui_action = get_gui_input();
-			ds2_getrawInput(&inputdata);
+			DS2_GetInputState(&inputdata);
 
-			// Get KEY_RIGHT and KEY_LEFT separately to allow scrolling
+			// Get DS_BUTTON_RIGHT and DS_BUTTON_LEFT separately to allow scrolling
 			// the selected file name faster.
-			if (inputdata.key & KEY_RIGHT)
-				EntryScrollValue = -3;
-			else if (inputdata.key & KEY_LEFT)
-				EntryScrollValue = 3;
+			if (inputdata.buttons & DS_BUTTON_RIGHT)
+				entry_scroll = -3;
+			else if (inputdata.buttons & DS_BUTTON_LEFT)
+				entry_scroll = 3;
 
-			switch(gui_action)
-			{
+			switch (gui_action) {
 				case CURSOR_TOUCH:
 				{
-					wait_Allkey_release(0);
+					DS2_AwaitNoButtons();
 					// ___ 33        This screen has 6 possible rows. Touches
 					// ___ 60        above or below these are ignored.
 					// . . . (+27)
 					// ___ 192
-					if(inputdata.y <= GUI_ROW1_Y || inputdata.y > NDS_SCREEN_HEIGHT)
+					if (inputdata.touch_y <= GUI_ROW1_Y || inputdata.touch_y > DS_SCREEN_HEIGHT)
 						break;
 
-					u32 mod = (inputdata.y - GUI_ROW1_Y) / GUI_ROW_SY;
+					size_t row = (inputdata.touch_y - GUI_ROW1_Y) / GUI_ROW_SY;
 
-					if(mod >= LastEntry - FirstEntry + 1)
+					if (row >= last_entry - first_entry + 1)
 						break;
 
-					SelectedIndex = FirstEntry + mod;
+					sel_entry = first_entry + row;
 					/* fall through */
 				}
 
 				case CURSOR_SELECT:
-					wait_Allkey_release(0);
-					if (SelectedIndex == 0) // The parent directory
-					{
-						char* SlashPos = strrchr(CurrentDirectory, '/');
-						if (SlashPos != NULL) // There's a parent
-						{
-							*SlashPos = '\0';
-							ContinueInput = 0;
+					DS2_AwaitNoButtons();
+					if (sel_entry == 0) {  /* the parent directory */
+						char* slash = strrchr(cur_dir, '/');
+						if (slash != NULL) {  /* there's a parent */
+							*slash = '\0';
+							continue_input = false;
+						} else {  /* we're at the root */
+							ret = -1;
+							continue_dir = false;
 						}
-						else // We're at the root
-						{
-							ReturnValue = -1;
-							ContinueDirectoryRead = 0;
-						}
-					}
-					else if (EntryDirectoryFlags[SelectedIndex])
-					{
-						strcat(CurrentDirectory, "/");
-						strcat(CurrentDirectory, EntryNames[SelectedIndex]);
-						ContinueInput = 0;
-					}
-					else
-					{
-						strcpy(default_dir_name, CurrentDirectory);
-						strcpy(result, EntryNames[SelectedIndex]);
-						ReturnValue = 0;
-						ContinueDirectoryRead = 0;
+					} else if (entries[sel_entry].is_dir) {
+						strcat(cur_dir, "/");
+						strcat(cur_dir, entries[sel_entry].name);
+						continue_input = false;
+					} else {
+						strcpy(dir, cur_dir);
+						strcpy(result_name, entries[sel_entry].name);
+						ret = 0;
+						continue_dir = false;
 					}
 					break;
 
 				case CURSOR_UP:
-					SelectedIndex--;
-					if (SelectedIndex < 0)
-						SelectedIndex++;
-					else
-						ModifyScrollers = 1;
+					if (sel_entry > 0)
+						sel_entry--;
 					break;
 
 				case CURSOR_DOWN:
-					SelectedIndex++;
-					if (SelectedIndex >= EntryCount)
-						SelectedIndex--;
-					else
-						ModifyScrollers = 1;
+					sel_entry++;
+					if (sel_entry >= count)
+						sel_entry--;
 					break;
 
 				//scroll page down
 				case CURSOR_RTRIGGER:
-				{
-					u32 OldIndex = SelectedIndex;
-					SelectedIndex += FILE_LIST_ROWS;
-					if (SelectedIndex >= EntryCount)
-						SelectedIndex = EntryCount - 1;
-					if (SelectedIndex != OldIndex)
-						ModifyScrollers = 1;
+					sel_entry += FILE_LIST_ROWS;
+					if (sel_entry >= count)
+						sel_entry = count - 1;
 					break;
-				}
 
 				//scroll page up
 				case CURSOR_LTRIGGER:
-				{
-					u32 OldIndex = SelectedIndex;
-					SelectedIndex -= FILE_LIST_ROWS;
-					if (SelectedIndex < 0)
-						SelectedIndex = 0;
-					if (SelectedIndex != OldIndex)
-						ModifyScrollers = 1;
+					if (sel_entry >= FILE_LIST_ROWS)
+						sel_entry -= FILE_LIST_ROWS;
+					else
+						sel_entry = 0;
 					break;
-				}
 
 				case CURSOR_BACK:
 				{
-					wait_Allkey_release(0);
-					char* SlashPos = strrchr(CurrentDirectory, '/');
-					if (SlashPos != NULL) // There's a parent
-					{
-						*SlashPos = '\0';
-						ContinueInput = 0;
-					}
-					else // We're at the root
-					{
-						ReturnValue = -1;
-						ContinueDirectoryRead = 0;
+					DS2_AwaitNoButtons();
+					char* slash = strrchr(cur_dir, '/');
+					if (slash != NULL) {  /* there's a parent */
+						*slash = '\0';
+						continue_input = false;
+					} else {  /* we're at the root */
+						ret = -1;
+						continue_dir = false;
 					}
 					break;
 				}
 
 				case CURSOR_EXIT:
-					wait_Allkey_release(0);
-					ReturnValue = -1;
-					ContinueDirectoryRead = 0;
+					DS2_AwaitNoButtons();
+					ret = -1;
+					continue_dir = false;
 					break;
 
 				default:
@@ -1166,119 +903,47 @@ s32 load_file(char **wildcards, char *result, char *default_dir_name)
 		} // end while
 
 cleanupScrollers:
-		for (; ScrollerCount > 0; ScrollerCount--)
-			draw_hscroll_over(ScrollerCount - 1);
+		for (i = 0; i < FILE_LIST_ROWS + 1; i++) {
+			draw_hscroll_over(scrollers[i]);
+			scrollers[i] = NULL;
+		}
 
 cleanup:
-		if (CurrentDirHandle != NULL)
-			closedir(CurrentDirHandle);
+		if (cur_dir_handle != NULL)
+			closedir(cur_dir_handle);
 
-		if (EntryDirectoryFlags != NULL)
-			free(EntryDirectoryFlags);
-		if (EntryNames != NULL)
-		{
-			// EntryNames[0] is "..", a literal. Don't free it.
-			for (; EntryCount > 1; EntryCount--)
-				free(EntryNames[EntryCount - 1]);
-			free(EntryNames);
+		if (entries != NULL) {
+			for (; count > 0; count--)
+				free(entries[count - 1].name);
+			free(entries);
 		}
 	} // end while
 
-	return ReturnValue;
+	return ret;
 }
-
-
-/*
-*	Function: search directory on directory_path
-*	directory: directory name will be searched
-*	directory_path: path, note that the buffer which hold directory_path should
-*		be large enough for nested
-*	return: 0= found, directory lay on directory_path
-*/
-int search_dir(char *directory, char* directory_path)
-{
-    DIR *current_dir;
-    dirent *current_file;
-	struct stat st;
-    int directory_path_len;
-
-    current_dir= opendir(directory_path);
-    if(current_dir == NULL)
-        return -1;
-
-	directory_path_len = strlen(directory_path);
-
-	//while((current_file = readdir(current_dir)) != NULL)
-	while((current_file = readdir_ex(current_dir, &st)) != NULL)
-	{
-		//Is directory 
-		if(S_ISDIR(st.st_mode))
-		{
-			if(strcmp(".", current_file->d_name) || strcmp("..", current_file->d_name))
-				continue;
-
-			strcpy(directory_path+directory_path_len, current_file->d_name);
-
-			if(!strcasecmp(current_file->d_name, directory))
-			{//dirctory find
-				closedir(current_dir);
-				return 0;
-			}
-
-			if(search_dir(directory, directory_path) == 0)
-			{//dirctory find
-				closedir(current_dir);
-				return 0;
-			}
-
-			directory_path[directory_path_len] = '\0';
-		}
-    }
-
-    closedir(current_dir);
-    return -1;
-}
-
-void savefast_int(void)
-{
-
-}
-
-#if 1
-void dump_mem(unsigned char* addr, unsigned int len)
-{
-	unsigned int i;
-
-	for(i= 0; i < len; i++)
-	{
-		cprintf("%02x ", addr[i]);
-		if((i+1)%16 == 0) cprintf("\n");
-	}
-}
-#endif
 
 /*--------------------------------------------------------
 	Main Menu
 --------------------------------------------------------*/
-u32 menu()
+uint32_t menu()
 {
     gui_action_type gui_action;
-    u32 i;
-    u32 repeat;
-    u32 return_value = 0;
-    char tmp_filename[MAX_FILE];
+    uint32_t i;
+    uint32_t repeat;
+    uint32_t return_value = 0;
+    char tmp_filename[NAME_MAX];
     char line_buffer[512];
 
     MENU_TYPE *current_menu = NULL;
     MENU_OPTION_TYPE *current_option = NULL;
     MENU_OPTION_TYPE *display_option = NULL;
     
-    u32 current_option_num;
-//    u32 parent_option_num;
-    u32 string_select;
+    uint32_t current_option_num;
+//    uint32_t parent_option_num;
+    uint32_t string_select;
 
-    u16 *bg_screenp;
-    u32 bg_screenp_color;
+    uint16_t *bg_screenp;
+    uint32_t bg_screenp_color;
 
 	auto void menu_exit();
 	auto void choose_menu();
@@ -1290,19 +955,18 @@ u32 menu()
 	auto void others_menu_end();
 	auto void check_application_version();
 	auto void language_set();
-	auto void show_card_space();
 
 //Local function definition
 
 	void menu_exit()
 	{
-		ds2_setCPUclocklevel(13); // Crank it up, leave quickly
+		DS2_HighClockSpeed(); // Crank it up, leave quickly
 		quit();
 	}
 
 	void menu_load_for_compression()
 	{
-		char *file_ext[] = { NULL }; // Show all files
+		const char *file_ext[] = { NULL }; // Show all files
 
 		if(load_file(file_ext, tmp_filename, g_default_rom_dir) != -1)
 		{
@@ -1310,20 +974,19 @@ u32 menu()
 			strcat(line_buffer, "/");
 			strcat(line_buffer, tmp_filename);
 
-			ds2_clearScreen(DOWN_SCREEN, RGB15(0, 0, 0));
-			ds2_flipScreen(DOWN_SCREEN, DOWN_SCREEN_UPDATE_METHOD);
+			DS2_FillScreen(DS_ENGINE_SUB, COLOR_BLACK);
+			DS2_UpdateScreen(DS_ENGINE_SUB);
 
-			mdelay(100); // to prevent ds2_setBacklight from crashing
-			ds2_setBacklight(2);
+			DS2_SetScreenBacklights(DS_SCREEN_UPPER);
 
-			ds2_setCPUclocklevel(13);
-			u32 level = application_config.CompressionLevel;
+			DS2_HighClockSpeed();
+			uint32_t level = application_config.CompressionLevel;
 			if (level == 0)
 				level = 1;
 			else if (level > 9)
 				level = 9;
-			while (!GzipCompress (line_buffer, level)); // retry if needed
-			ds2_setCPUclocklevel(0);
+			while (!GzipCompress(line_buffer, level)); // retry if needed
+			DS2_LowClockSpeed();
 
 			return_value = 1;
 			repeat = 0;
@@ -1336,7 +999,7 @@ u32 menu()
 
 	void menu_load_for_decompression()
 	{
-		char *file_ext[] = { ".gz", ".zip", NULL };
+		const char *file_ext[] = { ".gz", ".zip", NULL };
 
 		if(load_file(file_ext, tmp_filename, g_default_rom_dir) != -1)
 		{
@@ -1344,18 +1007,17 @@ u32 menu()
 			strcat(line_buffer, "/");
 			strcat(line_buffer, tmp_filename);
 
-			ds2_clearScreen(DOWN_SCREEN, RGB15(0, 0, 0));
-			ds2_flipScreen(DOWN_SCREEN, DOWN_SCREEN_UPDATE_METHOD);
+			DS2_FillScreen(DS_ENGINE_SUB, COLOR_BLACK);
+			DS2_UpdateScreen(DS_ENGINE_SUB);
 
-			mdelay(100); // to prevent ds2_setBacklight from crashing
-			ds2_setBacklight(2);
+			DS2_SetScreenBacklights(DS_SCREEN_UPPER);
 
-			ds2_setCPUclocklevel(13);
+			DS2_HighClockSpeed();
 			if (strcasecmp(&line_buffer[strlen(line_buffer) - 3 /* .gz */], ".gz") == 0)
-				while (!GzipDecompress (line_buffer)); // retry if needed
+				while (!GzipUncompress(line_buffer)); // retry if needed
 			else if (strcasecmp(&line_buffer[strlen(line_buffer) - 4 /* .zip */], ".zip") == 0)
-				while (!ZipUncompress (line_buffer)); // retry if needed
-			ds2_setCPUclocklevel(0);
+				while (!ZipUncompress(line_buffer)); // retry if needed
+			DS2_LowClockSpeed();
 
 			return_value = 1;
 			repeat = 0;
@@ -1370,31 +1032,30 @@ u32 menu()
     {
         if(bg_screenp != NULL)
         {
-            bg_screenp_color = COLOR16(43, 11, 11);
-            memcpy(bg_screenp, down_screen_addr, 256*192*2);
+            bg_screenp_color = COLOR_BG;
+            memcpy(bg_screenp, DS2_GetSubScreen(), 256*192*2);
         }
         else
             bg_screenp_color = COLOR_BG;
 
-        draw_message(down_screen_addr, bg_screenp, 28, 31, 227, 165, bg_screenp_color);
-        draw_string_vcenter(down_screen_addr, MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, msg[MSG_DIALOG_RESET]);
+        draw_message_box(DS2_GetSubScreen());
+        draw_string_vcenter(DS2_GetSubScreen(), MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, msg[MSG_DIALOG_RESET]);
 
-        if(draw_yesno_dialog(DOWN_SCREEN, 115, msg[MSG_GENERAL_CONFIRM_WITH_A], msg[MSG_GENERAL_CANCEL_WITH_B]))
+        if(draw_yesno_dialog(DS_ENGINE_SUB, msg[MSG_GENERAL_CONFIRM_WITH_A], msg[MSG_GENERAL_CANCEL_WITH_B]))
         {
-		wait_Allkey_release(0);
-            draw_message(down_screen_addr, bg_screenp, 28, 31, 227, 165, bg_screenp_color);
-            draw_string_vcenter(down_screen_addr, MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, msg[MSG_PROGRESS_RESETTING]);
-            ds2_flipScreen(DOWN_SCREEN, DOWN_SCREEN_UPDATE_METHOD);
+		DS2_AwaitNoButtons();
+            draw_message_box(DS2_GetSubScreen());
+            draw_string_vcenter(DS2_GetSubScreen(), MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, msg[MSG_PROGRESS_RESETTING]);
+            DS2_UpdateScreen(DS_ENGINE_SUB);
+            DS2_AwaitScreenUpdate(DS_ENGINE_SUB);
 
             sprintf(line_buffer, "%s/%s", main_path, APPLICATION_CONFIG_FILENAME);
             remove(line_buffer);
 
             init_application_config();
 
-		ds2_clearScreen(UP_SCREEN, 0);
-		ds2_flipScreen(UP_SCREEN, 1);
-
-		// mdelay(500); // Delete this delay
+		DS2_FillScreen(DS_ENGINE_MAIN, COLOR_BLACK);
+		DS2_FlipMainScreen();
         }
     }
 
@@ -1402,31 +1063,32 @@ u32 menu()
     {
         if(bg_screenp != NULL)
         {
-            bg_screenp_color = COLOR16(43, 11, 11);
-            memcpy(bg_screenp, down_screen_addr, 256*192*2);
+            bg_screenp_color = COLOR_BG;
+            memcpy(bg_screenp, DS2_GetSubScreen(), 256*192*2);
         }
         else
             bg_screenp_color = COLOR_BG;
 
-        draw_message(down_screen_addr, bg_screenp, 28, 31, 227, 165, bg_screenp_color);
+        draw_message_box(DS2_GetSubScreen());
         sprintf(line_buffer, "%s\n%s %s", msg[MSG_APPLICATION_NAME], msg[MSG_WORD_APPLICATION_VERSION], DS2COMP_VERSION);
-        draw_string_vcenter(down_screen_addr, MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, line_buffer);
-        ds2_flipScreen(DOWN_SCREEN, DOWN_SCREEN_UPDATE_METHOD);
+        draw_string_vcenter(DS2_GetSubScreen(), MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, line_buffer);
+        DS2_UpdateScreen(DS_ENGINE_SUB);
+        DS2_AwaitScreenUpdate(DS_ENGINE_SUB);
 
-		wait_Allkey_release(0); // invoked from the menu
-		wait_Anykey_press(0); // wait until the user presses something
-		wait_Allkey_release(0); // don't give that button to the menu
+		DS2_AwaitNoButtons(); // invoked from the menu
+		DS2_AwaitAnyButtons(); // wait until the user presses something
+		DS2_AwaitNoButtons(); // don't give that button to the menu
     }
 
     void language_set()
     {
         if(gui_action == CURSOR_LEFT || gui_action == CURSOR_RIGHT)
         {
-            ds2_setCPUclocklevel(13); // crank it up
+            DS2_HighClockSpeed(); // crank it up
             if(bg_screenp != NULL)
             {
-                bg_screenp_color = COLOR16(43, 11, 11);
-                memcpy(bg_screenp, down_screen_addr, 256*192*2);
+                bg_screenp_color = COLOR_BG;
+                memcpy(bg_screenp, DS2_GetSubScreen(), 256*192*2);
             }
             else
                 bg_screenp_color = COLOR_BG;
@@ -1434,52 +1096,8 @@ u32 menu()
             load_language_msg(LANGUAGE_PACK, application_config.language);
 
             save_application_config_file();
-            ds2_setCPUclocklevel(0); // and back down
+            DS2_LowClockSpeed(); // and back down
         }
-    }
-
-	unsigned int freespace;
-    void show_card_space ()
-    {
-        u32 line_num;
-        u32 num_byte;
-
-        strcpy(line_buffer, *(display_option->display_string));
-        line_num= display_option-> line_number;
-        PRINT_STRING_BG(down_screen_addr, line_buffer, COLOR_INACTIVE_ITEM, COLOR_TRANS, OPTION_TEXT_X,
-            GUI_ROW1_Y + (display_option->line_number) * GUI_ROW_SY + TEXT_OFFSET_Y);
-
-		num_byte = freespace;
-
-        if(num_byte <= 9999*2)
-        { /* < 9999KB */
-            sprintf(line_buffer, "%d", num_byte/2);
-            if(num_byte & 1)
-                strcat(line_buffer, ".5 KB");
-            else
-                strcat(line_buffer, ".0 KB");
-        }
-        else if(num_byte <= 9999*1024*2)
-        { /* < 9999MB */
-            num_byte /= 1024;
-            sprintf(line_buffer, "%d", num_byte/2);
-            if(num_byte & 1)
-                strcat(line_buffer, ".5 MB");
-            else
-                strcat(line_buffer, ".0 MB");
-        }
-        else
-        {
-            num_byte /= 1024*1024;
-            sprintf(line_buffer, "%d", num_byte/2);
-            if(num_byte & 1)
-                strcat(line_buffer, ".5 GB");
-            else
-                strcat(line_buffer, ".0 GB");
-        }
-
-        PRINT_STRING_BG(down_screen_addr, line_buffer, COLOR_INACTIVE_ITEM, COLOR_TRANS, 147,
-            GUI_ROW1_Y + (display_option->line_number) * GUI_ROW_SY + TEXT_OFFSET_Y);
     }
 
     char *on_off_options[] = { (char*)&msg[MSG_GENERAL_OFF], (char*)&msg[MSG_GENERAL_ON] };
@@ -1487,7 +1105,7 @@ u32 menu()
   /*--------------------------------------------------------
      Others
   --------------------------------------------------------*/
-    u32 desert= 0;
+    uint32_t desert= 0;
 	MENU_OPTION_TYPE others_options[] = 
 	{
 	/* 00 */ SUBMENU_OPTION(NULL, &msg[MSG_MAIN_MENU_OPTIONS], NULL, 0),
@@ -1497,12 +1115,9 @@ u32 menu()
 	/* 02 */ STRING_SELECTION_OPTION(language_set, NULL, &msg[FMT_OPTIONS_LANGUAGE], language_options, 
         &application_config.language, sizeof(language_options) / sizeof(language_options[0]) /* number of possible languages */, NULL, ACTION_TYPE, 2),
 
-	/* 03 */ STRING_SELECTION_OPTION(NULL, show_card_space, &msg[MSG_OPTIONS_CARD_CAPACITY], NULL, 
-        &desert, 2, NULL, PASSIVE_TYPE | HIDEN_TYPE, 3),
+	/* 03 */ ACTION_OPTION(load_default_setting, NULL, &msg[MSG_OPTIONS_RESET], NULL, 3),
 
-	/* 04 */ ACTION_OPTION(load_default_setting, NULL, &msg[MSG_OPTIONS_RESET], NULL, 4),
-
-	/* 05 */ ACTION_OPTION(check_application_version, NULL, &msg[MSG_OPTIONS_VERSION], NULL, 5),
+	/* 04 */ ACTION_OPTION(check_application_version, NULL, &msg[MSG_OPTIONS_VERSION], NULL, 4),
 	};
 
 	MAKE_MENU(others, others_menu_init, NULL, NULL, others_menu_end, 1, 1);
@@ -1526,56 +1141,56 @@ u32 menu()
 
 	void main_menu_passive()
 	{
-		show_icon(down_screen_addr, &ICON_MAINBG, 0, 0);
+		show_icon(DS2_GetSubScreen(), &ICON_MAINBG, 0, 0);
 		current_menu -> focus_option = current_option -> line_number;
 
 		// Compress
 		strcpy(line_buffer, *(display_option->display_string));
 		if(display_option++ == current_option) {
-			show_icon(down_screen_addr, &ICON_COMPRESS, 0, 0);
-			show_icon(down_screen_addr, &ICON_MSEL, 24, 81);
+			show_icon(DS2_GetSubScreen(), &ICON_COMPRESS, 0, 0);
+			show_icon(DS2_GetSubScreen(), &ICON_MSEL, 24, 81);
 		}
 		else {
-			show_icon(down_screen_addr, &ICON_NCOMPRESS, 0, 0);
-			show_icon(down_screen_addr, &ICON_MNSEL, 24, 81);
+			show_icon(DS2_GetSubScreen(), &ICON_NCOMPRESS, 0, 0);
+			show_icon(DS2_GetSubScreen(), &ICON_MNSEL, 24, 81);
 		}
-		draw_string_vcenter(down_screen_addr, 26, 81, 75, COLOR_WHITE, line_buffer);
+		draw_string_vcenter(DS2_GetSubScreen(), 26, 81, 75, COLOR_WHITE, line_buffer);
 
 		// Decompress
 		strcpy(line_buffer, *(display_option->display_string));
 		if(display_option++ == current_option) {
-			show_icon(down_screen_addr, &ICON_DECOMPRESS, 128, 0);
-			show_icon(down_screen_addr, &ICON_MSEL, 152, 81);
+			show_icon(DS2_GetSubScreen(), &ICON_DECOMPRESS, 128, 0);
+			show_icon(DS2_GetSubScreen(), &ICON_MSEL, 152, 81);
 		}
 		else {
-			show_icon(down_screen_addr, &ICON_NDECOMPRESS, 128, 0);
-			show_icon(down_screen_addr, &ICON_MNSEL, 152, 81);
+			show_icon(DS2_GetSubScreen(), &ICON_NDECOMPRESS, 128, 0);
+			show_icon(DS2_GetSubScreen(), &ICON_MNSEL, 152, 81);
 		}
-		draw_string_vcenter(down_screen_addr, 154, 81, 75, COLOR_WHITE, line_buffer);
+		draw_string_vcenter(DS2_GetSubScreen(), 154, 81, 75, COLOR_WHITE, line_buffer);
 
 		// Options
 		strcpy(line_buffer, *(display_option->display_string));
 		if(display_option++ == current_option) {
-			show_icon(down_screen_addr, &ICON_OPTIONS, 0, 96);
-			show_icon(down_screen_addr, &ICON_MSEL, 24, 177);
+			show_icon(DS2_GetSubScreen(), &ICON_OPTIONS, 0, 96);
+			show_icon(DS2_GetSubScreen(), &ICON_MSEL, 24, 177);
 		}
 		else {
-			show_icon(down_screen_addr, &ICON_NOPTIONS, 0, 96);
-			show_icon(down_screen_addr, &ICON_MNSEL, 24, 177);
+			show_icon(DS2_GetSubScreen(), &ICON_NOPTIONS, 0, 96);
+			show_icon(DS2_GetSubScreen(), &ICON_MNSEL, 24, 177);
 		}
-		draw_string_vcenter(down_screen_addr, 26, 177, 75, COLOR_WHITE, line_buffer);
+		draw_string_vcenter(DS2_GetSubScreen(), 26, 177, 75, COLOR_WHITE, line_buffer);
 
 		// Exit
 		strcpy(line_buffer, *(display_option->display_string));
 		if(display_option++ == current_option) {
-			show_icon(down_screen_addr, &ICON_EXIT, 128, 96);
-			show_icon(down_screen_addr, &ICON_MSEL, 152, 177);
+			show_icon(DS2_GetSubScreen(), &ICON_EXIT, 128, 96);
+			show_icon(DS2_GetSubScreen(), &ICON_MSEL, 152, 177);
 		}
 		else {
-			show_icon(down_screen_addr, &ICON_NEXIT, 128, 96);
-			show_icon(down_screen_addr, &ICON_MNSEL, 152, 177);
+			show_icon(DS2_GetSubScreen(), &ICON_NEXIT, 128, 96);
+			show_icon(DS2_GetSubScreen(), &ICON_MNSEL, 152, 177);
 		}
-		draw_string_vcenter(down_screen_addr, 154, 177, 75, COLOR_WHITE, line_buffer);
+		draw_string_vcenter(DS2_GetSubScreen(), 154, 177, 75, COLOR_WHITE, line_buffer);
 	}
 
     void main_menu_key()
@@ -1623,11 +1238,6 @@ u32 menu()
 
     void others_menu_init()
     {
-		unsigned int total, used;
-
-		//get card space info
-		freespace = 0;
-		fat_getDiskSpaceInfo("fat:", &total, &used, &freespace);
     }
 
 	void others_menu_end()
@@ -1655,18 +1265,14 @@ u32 menu()
 
 //----------------------------------------------------------------------------//
 //	Menu Start
-	ds2_setCPUclocklevel(0);
-	mdelay(100); // to prevent ds2_setBacklight() from crashing
-	ds2_setBacklight(1);
+	DS2_LowClockSpeed();
+	DS2_SetScreenBacklights(DS_SCREEN_LOWER);
 	
-	wait_Allkey_release(~KEY_LID); // Allow the lid closing to go through
+	DS2_AwaitNoButtonsIn(~DS_BUTTON_LID); // Allow the lid closing to go through
 	// so the user can close the lid and make it sleep after compressing
-	bg_screenp= (u16*)malloc(256*192*2);
+	bg_screenp= (uint16_t*)malloc(256*192*2);
 
 	repeat = 1;
-
-	ds2_clearScreen(UP_SCREEN, RGB15(0, 0, 0));
-	ds2_flipScreen(UP_SCREEN, UP_SCREEN_UPDATE_METHOD);
 
 	choose_menu(&main_menu);
 
@@ -1681,15 +1287,15 @@ u32 menu()
 			current_menu -> passive_function();
 		else
 		{
-			u32 line_num, screen_focus, focus_option;
+			uint32_t line_num, screen_focus, focus_option;
 
 			//draw background
-			show_icon(down_screen_addr, &ICON_SUBBG, 0, 0);
-			show_icon(down_screen_addr, &ICON_TITLE, 0, 0);
-			show_icon(down_screen_addr, &ICON_TITLEICON, TITLE_ICON_X, TITLE_ICON_Y);
+			show_icon(DS2_GetSubScreen(), &ICON_SUBBG, 0, 0);
+			show_icon(DS2_GetSubScreen(), &ICON_TITLE, 0, 0);
+			show_icon(DS2_GetSubScreen(), &ICON_TITLEICON, TITLE_ICON_X, TITLE_ICON_Y);
 
 			strcpy(line_buffer, *(display_option->display_string));
-			draw_string_vcenter(down_screen_addr, 0, 9, 256, COLOR_ACTIVE_ITEM, line_buffer);
+			draw_string_vcenter(DS2_GetSubScreen(), 0, 9, 256, COLOR_ACTIVE_ITEM, line_buffer);
 
 			line_num = current_option_num;
 			screen_focus = current_menu -> screen_focus;
@@ -1729,16 +1335,16 @@ u32 menu()
 				line_num = SUBMENU_ROW_NUM;
 
 			if(focus_option == 0)
-				show_icon(down_screen_addr, &ICON_BACK, BACK_BUTTON_X, BACK_BUTTON_Y);
+				show_icon(DS2_GetSubScreen(), &ICON_BACK, BACK_BUTTON_X, BACK_BUTTON_Y);
 			else
-				show_icon(down_screen_addr, &ICON_NBACK, BACK_BUTTON_X, BACK_BUTTON_Y);
+				show_icon(DS2_GetSubScreen(), &ICON_NBACK, BACK_BUTTON_X, BACK_BUTTON_Y);
 
 			for(i= 0; i < line_num; i++, display_option++)
     	    {
     	        unsigned short color;
 
 				if(display_option == current_option)
-					show_icon(down_screen_addr, &ICON_SUBSELA, SUBSELA_X, GUI_ROW1_Y + i * GUI_ROW_SY + SUBSELA_OFFSET_Y);
+					show_icon(DS2_GetSubScreen(), &ICON_SUBSELA, SUBSELA_X, GUI_ROW1_Y + i * GUI_ROW_SY + SUBSELA_OFFSET_Y);
 
 				if(display_option->passive_function)
 				{
@@ -1753,7 +1359,7 @@ u32 menu()
 				else if(display_option->option_type & STRING_SELECTION_TYPE)
 				{
 					sprintf(line_buffer, *(display_option->display_string),
-						*((u32*)(((u32 *)display_option->options)[*(display_option->current_option)])));
+						*((uint32_t*)(((uint32_t *)display_option->options)[*(display_option->current_option)])));
 				}
 				else
 				{
@@ -1767,23 +1373,20 @@ u32 menu()
 					else
 						color= COLOR_INACTIVE_ITEM;
 	
-					PRINT_STRING_BG(down_screen_addr, line_buffer, color, COLOR_TRANS, OPTION_TEXT_X, GUI_ROW1_Y + i * GUI_ROW_SY + TEXT_OFFSET_Y);
+					PRINT_STRING_BG(DS2_GetSubScreen(), line_buffer, color, COLOR_TRANS, OPTION_TEXT_X, GUI_ROW1_Y + i * GUI_ROW_SY + TEXT_OFFSET_Y);
 				}
     	    }
     	}
 
-	mdelay(20); // to prevent the DSTwo-DS link from being too clogged
-	            // to return button statuses
-
-		struct key_buf inputdata;
+		struct DS_InputState inputdata;
 		gui_action = get_gui_input();
 
 		switch(gui_action)
 		{
 			case CURSOR_TOUCH:
-				ds2_getrawInput(&inputdata);
+				DS2_GetInputState(&inputdata);
 				/* Back button at the top of every menu but the main one */
-				if(current_menu != &main_menu && inputdata.x >= BACK_BUTTON_X && inputdata.y < BACK_BUTTON_Y + ICON_BACK.y)
+				if(current_menu != &main_menu && inputdata.touch_x >= BACK_BUTTON_X && inputdata.touch_y < BACK_BUTTON_Y + ICON_BACK.y)
 				{
 					choose_menu(current_menu->options->sub_menu);
 					break;
@@ -1796,7 +1399,7 @@ u32 menu()
 					// |0CMP_|1DEC_| 96
 					// |2OPT_|3EXI_| 192
 
-					current_option_num = (inputdata.y / 96) * 2 + (inputdata.x / 128);
+					current_option_num = (inputdata.touch_y / 96) * 2 + (inputdata.touch_x / 128);
 					current_option = current_menu->options + current_option_num;
 					
 					if(current_option -> option_type & HIDEN_TYPE)
@@ -1810,13 +1413,13 @@ u32 menu()
 				else if(current_menu != (main_menu.options + 0)->sub_menu
 				&& current_menu != (main_menu.options + 1)->sub_menu)
 				{
-					if (inputdata.y <= GUI_ROW1_Y || inputdata.y > GUI_ROW1_Y + GUI_ROW_SY * SUBMENU_ROW_NUM)
+					if (inputdata.touch_y <= GUI_ROW1_Y || inputdata.touch_y > GUI_ROW1_Y + GUI_ROW_SY * SUBMENU_ROW_NUM)
 						break;
 					// ___ 33        This screen has 6 possible rows. Touches
 					// ___ 60        above or below these are ignored.
 					// . . . (+27)   The row between 33 and 60 is [1], though!
 					// ___ 192
-					u32 next_option_num = (inputdata.y - GUI_ROW1_Y) / GUI_ROW_SY + 1;
+					uint32_t next_option_num = (inputdata.touch_y - GUI_ROW1_Y) / GUI_ROW_SY + 1;
 					struct _MENU_OPTION_TYPE *next_option = current_menu->options + next_option_num;
 
 					if (next_option_num >= current_menu->num_options)
@@ -1839,7 +1442,7 @@ u32 menu()
 					else if(current_option->option_type & (NUMBER_SELECTION_TYPE | STRING_SELECTION_TYPE))
 					{
 						gui_action = CURSOR_RIGHT;
-						u32 current_option_val = *(current_option->current_option);
+						uint32_t current_option_val = *(current_option->current_option);
 
 						if(current_option_val <  current_option->num_options -1)
 							current_option_val++;
@@ -1901,7 +1504,7 @@ u32 menu()
 				{
 					if(current_option->option_type & (NUMBER_SELECTION_TYPE | STRING_SELECTION_TYPE))
 					{
-						u32 current_option_val = *(current_option->current_option);
+						uint32_t current_option_val = *(current_option->current_option);
 
 						if(current_option_val <  current_option->num_options -1)
 							current_option_val++;
@@ -1922,7 +1525,7 @@ u32 menu()
 				{
 					if(current_option->option_type & (NUMBER_SELECTION_TYPE | STRING_SELECTION_TYPE))
 					{
-						u32 current_option_val = *(current_option->current_option);
+						uint32_t current_option_val = *(current_option->current_option);
 
 						if(current_option_val)
 							current_option_val--;
@@ -1955,22 +1558,22 @@ u32 menu()
 				break;
 		} // end swith
 
-		ds2_flipScreen(DOWN_SCREEN, DOWN_SCREEN_UPDATE_METHOD);
+		DS2_UpdateScreen(DS_ENGINE_SUB);
+		DS2_AwaitScreenUpdate(DS_ENGINE_SUB);
 	} // end while
 
 	if (current_menu && current_menu->end_function)
 		current_menu->end_function();
 
 	if(bg_screenp != NULL) free((void*)bg_screenp);
-	
-	ds2_clearScreen(DOWN_SCREEN, 0);
-	ds2_flipScreen(DOWN_SCREEN, DOWN_SCREEN_UPDATE_METHOD);
-	wait_Allkey_release(0);
 
-	mdelay(100); // to prevent ds2_setBacklight() from crashing
-	ds2_setBacklight(2);
+	DS2_FillScreen(DS_ENGINE_SUB, COLOR_BLACK);
+		DS2_UpdateScreen(DS_ENGINE_SUB);
+	DS2_AwaitNoButtons();
 
-	ds2_setCPUclocklevel(13);
+	DS2_SetScreenBacklights(DS_SCREEN_UPPER);
+
+	DS2_HighClockSpeed();
 
 	return return_value;
 }
@@ -1978,155 +1581,141 @@ u32 menu()
 /*--------------------------------------------------------
 	Load language message
 --------------------------------------------------------*/
-int load_language_msg(char *filename, u32 language)
+int load_language_msg(const char *filename, uint32_t language)
 {
 	FILE *fp;
-	char msg_path[MAX_PATH];
+	char msg_path[PATH_MAX];
 	char string[256];
-	char start[32];
-	char end[32];
+	const char* start;
+	const char* end;
 	char *pt, *dst;
-	u32 loop, offset, len;
+	uint32_t loop = 0, len;
 	int ret;
 
 	sprintf(msg_path, "%s/%s", main_path, filename);
 	fp = fopen(msg_path, "rb");
-	if(fp == NULL)
-	return -1;
+	if (fp == NULL)
+		return -1;
 
-	switch(language)
-	{
+	switch (language) {
 	case ENGLISH:
 	default:
-		strcpy(start, "STARTENGLISH");
-		strcpy(end, "ENDENGLISH");
+		start = "STARTENGLISH";
+		end = "ENDENGLISH";
 		break;
 	case FRENCH:
-		strcpy(start, "STARTFRENCH");
-		strcpy(end, "ENDFRENCH");
+		start = "STARTFRENCH";
+		end = "ENDFRENCH";
 		break;
 	case SPANISH:
-		strcpy(start, "STARTSPANISH");
-		strcpy(end, "ENDSPANISH");
+		start = "STARTSPANISH";
+		end = "ENDSPANISH";
 		break;
 	case GERMAN:
-		strcpy(start, "STARTGERMAN");
-		strcpy(end, "ENDGERMAN");
+		start = "STARTGERMAN";
+		end = "ENDGERMAN";
 		break;
 	}
-	u32 cmplen = strlen(start);
+	size_t start_len = strlen(start), end_len = strlen(end);
 
-	//find the start flag
-	ret= 0;
-	while(1)
-	{
-		pt= fgets(string, 256, fp);
-		if(pt == NULL)
-		{
-			ret= -2;
+	// find the start flag
+	ret = 0;
+	do {
+		pt = fgets(string, sizeof(string), fp);
+		if (pt == NULL) {
+			ret = -2;
 			goto load_language_msg_error;
 		}
+	} while (strncmp(pt, start, start_len) != 0);
 
-		if(!strncmp(pt, start, cmplen))
-			break;
-	}
+	dst = msg_data;
+	msg[0] = dst;
 
-	loop= 0;
-	offset= 0;
-	dst= msg_data;
-	msg[0]= dst;
-
-	while(loop != MSG_END)
-	{
-		while(1)
-		{
-			pt = fgets(string, 256, fp);
-			if(pt[0] == '#' || pt[0] == '\r' || pt[0] == '\n')
-				continue;
-			if(pt != NULL)
-				break;
-			else
-			{
+	while (loop != MSG_END) {
+		while (1) {
+			pt = fgets(string, sizeof(string), fp);
+			if (pt != NULL) {
+				if (pt[0] == '#' || pt[0] == '\r' || pt[0] == '\n')
+					continue;
+				else
+					break;
+			} else {
 				ret = -3;
 				goto load_language_msg_error;
 			}
 		}
 
-		if(!strncmp(pt, end, cmplen-2))
+		if (strncmp(pt, end, end_len) == 0)
 			break;
 
-
-		len= strlen(pt);
-		// memcpy(dst, pt, len);
+		len = strlen(pt);
 
 		// Replace key definitions (*letter) with Pictochat icons
 		// while copying.
-		unsigned int srcChar, dstLen = 0;
+		size_t srcChar, dstLen = 0;
 		for (srcChar = 0; srcChar < len; srcChar++)
 		{
-			if (pt[srcChar] == '*')
-			{
-				switch (pt[srcChar + 1])
-				{
+			if (pt[srcChar] == '*') {
+				switch (pt[srcChar + 1]) {
 				case 'A':
-					memcpy(&dst[dstLen], HOTKEY_A_DISPLAY, sizeof (HOTKEY_A_DISPLAY) - 1);
+					memcpy(&dst[dstLen], HOTKEY_A_DISPLAY, sizeof(HOTKEY_A_DISPLAY) - 1);
 					srcChar++;
-					dstLen += sizeof (HOTKEY_A_DISPLAY) - 1;
+					dstLen += sizeof(HOTKEY_A_DISPLAY) - 1;
 					break;
 				case 'B':
-					memcpy(&dst[dstLen], HOTKEY_B_DISPLAY, sizeof (HOTKEY_B_DISPLAY) - 1);
+					memcpy(&dst[dstLen], HOTKEY_B_DISPLAY, sizeof(HOTKEY_B_DISPLAY) - 1);
 					srcChar++;
-					dstLen += sizeof (HOTKEY_B_DISPLAY) - 1;
+					dstLen += sizeof(HOTKEY_B_DISPLAY) - 1;
 					break;
 				case 'X':
-					memcpy(&dst[dstLen], HOTKEY_X_DISPLAY, sizeof (HOTKEY_X_DISPLAY) - 1);
+					memcpy(&dst[dstLen], HOTKEY_X_DISPLAY, sizeof(HOTKEY_X_DISPLAY) - 1);
 					srcChar++;
-					dstLen += sizeof (HOTKEY_X_DISPLAY) - 1;
+					dstLen += sizeof(HOTKEY_X_DISPLAY) - 1;
 					break;
 				case 'Y':
-					memcpy(&dst[dstLen], HOTKEY_Y_DISPLAY, sizeof (HOTKEY_Y_DISPLAY) - 1);
+					memcpy(&dst[dstLen], HOTKEY_Y_DISPLAY, sizeof(HOTKEY_Y_DISPLAY) - 1);
 					srcChar++;
-					dstLen += sizeof (HOTKEY_Y_DISPLAY) - 1;
+					dstLen += sizeof(HOTKEY_Y_DISPLAY) - 1;
 					break;
 				case 'L':
-					memcpy(&dst[dstLen], HOTKEY_L_DISPLAY, sizeof (HOTKEY_L_DISPLAY) - 1);
+					memcpy(&dst[dstLen], HOTKEY_L_DISPLAY, sizeof(HOTKEY_L_DISPLAY) - 1);
 					srcChar++;
-					dstLen += sizeof (HOTKEY_L_DISPLAY) - 1;
+					dstLen += sizeof(HOTKEY_L_DISPLAY) - 1;
 					break;
 				case 'R':
-					memcpy(&dst[dstLen], HOTKEY_R_DISPLAY, sizeof (HOTKEY_R_DISPLAY) - 1);
+					memcpy(&dst[dstLen], HOTKEY_R_DISPLAY, sizeof(HOTKEY_R_DISPLAY) - 1);
 					srcChar++;
-					dstLen += sizeof (HOTKEY_R_DISPLAY) - 1;
+					dstLen += sizeof(HOTKEY_R_DISPLAY) - 1;
 					break;
 				case 'S':
-					memcpy(&dst[dstLen], HOTKEY_START_DISPLAY, sizeof (HOTKEY_START_DISPLAY) - 1);
+					memcpy(&dst[dstLen], HOTKEY_START_DISPLAY, sizeof(HOTKEY_START_DISPLAY) - 1);
 					srcChar++;
-					dstLen += sizeof (HOTKEY_START_DISPLAY) - 1;
+					dstLen += sizeof(HOTKEY_START_DISPLAY) - 1;
 					break;
 				case 's':
-					memcpy(&dst[dstLen], HOTKEY_SELECT_DISPLAY, sizeof (HOTKEY_SELECT_DISPLAY) - 1);
+					memcpy(&dst[dstLen], HOTKEY_SELECT_DISPLAY, sizeof(HOTKEY_SELECT_DISPLAY) - 1);
 					srcChar++;
-					dstLen += sizeof (HOTKEY_SELECT_DISPLAY) - 1;
+					dstLen += sizeof(HOTKEY_SELECT_DISPLAY) - 1;
 					break;
 				case 'u':
-					memcpy(&dst[dstLen], HOTKEY_UP_DISPLAY, sizeof (HOTKEY_UP_DISPLAY) - 1);
+					memcpy(&dst[dstLen], HOTKEY_UP_DISPLAY, sizeof(HOTKEY_UP_DISPLAY) - 1);
 					srcChar++;
-					dstLen += sizeof (HOTKEY_UP_DISPLAY) - 1;
+					dstLen += sizeof(HOTKEY_UP_DISPLAY) - 1;
 					break;
 				case 'd':
-					memcpy(&dst[dstLen], HOTKEY_DOWN_DISPLAY, sizeof (HOTKEY_DOWN_DISPLAY) - 1);
+					memcpy(&dst[dstLen], HOTKEY_DOWN_DISPLAY, sizeof(HOTKEY_DOWN_DISPLAY) - 1);
 					srcChar++;
-					dstLen += sizeof (HOTKEY_DOWN_DISPLAY) - 1;
+					dstLen += sizeof(HOTKEY_DOWN_DISPLAY) - 1;
 					break;
 				case 'l':
-					memcpy(&dst[dstLen], HOTKEY_LEFT_DISPLAY, sizeof (HOTKEY_LEFT_DISPLAY) - 1);
+					memcpy(&dst[dstLen], HOTKEY_LEFT_DISPLAY, sizeof(HOTKEY_LEFT_DISPLAY) - 1);
 					srcChar++;
-					dstLen += sizeof (HOTKEY_LEFT_DISPLAY) - 1;
+					dstLen += sizeof(HOTKEY_LEFT_DISPLAY) - 1;
 					break;
 				case 'r':
-					memcpy(&dst[dstLen], HOTKEY_RIGHT_DISPLAY, sizeof (HOTKEY_RIGHT_DISPLAY) - 1);
+					memcpy(&dst[dstLen], HOTKEY_RIGHT_DISPLAY, sizeof(HOTKEY_RIGHT_DISPLAY) - 1);
 					srcChar++;
-					dstLen += sizeof (HOTKEY_RIGHT_DISPLAY) - 1;
+					dstLen += sizeof(HOTKEY_RIGHT_DISPLAY) - 1;
 					break;
 				case '\0':
 					dst[dstLen] = pt[srcChar];
@@ -2138,48 +1727,32 @@ int load_language_msg(char *filename, u32 language)
 					dstLen += 2;
 					break;
 				}
-			}
-			else
-			{
+			} else {
 				dst[dstLen] = pt[srcChar];
 				dstLen++;
 			}
 		}
 
 		dst += dstLen;
-		//at a line return, when "\n" paded, this message not end
-		if(*(dst-1) == 0x0A)
-		{
+		// at a line return, when "\n" paded, this message not end
+		if (*(dst - 1) == 0x0A) {
 			pt = strrchr(pt, '\\');
-			if((pt != NULL) && (*(pt+1) == 'n'))
-			{
-				if(*(dst-2) == 0x0D)
-				{
-					*(dst-4)= '\n';
+			if ((pt != NULL) && (*(pt + 1) == 'n')) {
+				if (*(dst - 2) == 0x0D) {
+					*(dst - 4) = '\n';
 					dst -= 3;
-				}
-				else
-				{
-					*(dst-3)= '\n';
+				} else {
+					*(dst - 3) = '\n';
 					dst -= 2;
 				}
-			}
-			else//a message end
-			{
-				if(*(dst-2) == 0x0D)
+			} else /* the message ends */ {
+				if (*(dst - 2) == 0x0D)
 					dst -= 1;
-				*(dst-1) = '\0';
+				*(dst - 1) = '\0';
 				msg[++loop] = dst;
 			}
 		}
 	}
-
-	#if 0
-	loop= 0;
-	printf("------\n");
-	while(loop != MSG_END)
-	printf("%d: %s\n",loop, msg[loop++]);
-	#endif
 
 load_language_msg_error:
 	fclose(fp);
@@ -2193,9 +1766,9 @@ load_language_msg_error:
 /*--------------------------------------------------------
 	Load font library
 --------------------------------------------------------*/
-u32 load_font()
+uint32_t load_font()
 {
-    return (u32)BDF_font_init();
+    return (uint32_t)BDF_font_init();
 }
 
 /*--------------------------------------------------------
@@ -2218,7 +1791,7 @@ void init_application_config(void)
 --------------------------------------------------------*/
 int load_application_config_file(void)
 {
-	char tmp_path[MAX_PATH];
+	char tmp_path[PATH_MAX];
 	FILE* fp;
 	char *pt;
 
@@ -2254,7 +1827,7 @@ int load_application_config_file(void)
 --------------------------------------------------------*/
 int save_application_config_file()
 {
-    char tmp_path[MAX_PATH];
+    char tmp_path[PATH_MAX];
 	FILE* fp;
 
     sprintf(tmp_path, "%s/%s", main_path, APPLICATION_CONFIG_FILENAME);
@@ -2272,30 +1845,12 @@ int save_application_config_file()
 
 void quit(void)
 {
-/*
-  u32 reg_ra;
-
-  __asm__ __volatile__("or %0, $0, $ra"
-                        : "=r" (reg_ra)
-                        :);
-  
-  dbg_printf("return address= %08x\n", reg_ra);
-*/
-
-#ifdef USE_DEBUG
-	fclose(g_dbg_file);
-#endif
-
-	mdelay(100); // to prevent ds2_setBacklight from crashing
-	ds2_setBacklight(3); // return to the OS with both backlights on!
-
-	ds2_plug_exit();
-	while(1);
+	exit(EXIT_SUCCESS);
 }
 
-u32 file_length(FILE* file)
+uint32_t file_length(FILE* file)
 {
-  u32 pos, size;
+  uint32_t pos, size;
   pos= ftell(file);
   fseek(file, 0, SEEK_END);
   size= ftell(file);
@@ -2304,72 +1859,60 @@ u32 file_length(FILE* file)
   return size;
 }
 
-/*
-*	GUI Initialize
-*/
-void gui_init(u32 lang_id)
+void gui_init(uint32_t lang_id)
 {
 	int flag;
 
-	ds2_setCPUclocklevel(13); // Crank it up. When the menu starts, -> 0.
+	DS2_HighClockSpeed(); // Crank it up. When the menu starts, -> low.
 
-    //Find the "DS2COMP" system directory
-    DIR *current_dir;
+	// Find the "DS2COMP" system directory
+	DIR *current_dir;
 
-    strcpy(main_path, "fat:/DS2COMP");
-    current_dir = opendir(main_path);
-    if(current_dir)
-        closedir(current_dir);
-    else
-    {
-        strcpy(main_path, "fat:/_SYSTEM/PLUGINS/DS2COMP");
-        current_dir = opendir(main_path);
-        if(current_dir)
-            closedir(current_dir);
-        else
-        {
-            strcpy(main_path, "fat:");
-            if(search_dir("DS2COMP", main_path) == 0)
-            {
-                printf("Found DS2COMP directory\nDossier DS2COMP trouve\n\n%s\n", main_path);
-            }
-            else
-            {
-				err_msg(DOWN_SCREEN, "/DS2COMP: Directory missing\nPress any key to return to\nthe menu\n\n/DS2COMP: Dossier manquant\nAppuyer sur une touche pour\nretourner au menu");
-                goto gui_init_err;
-            }
-        }
-    }
+	strcpy(main_path, "fat:/DS2COMP");
 
-	show_log(down_screen_addr);
-	ds2_flipScreen(DOWN_SCREEN, DOWN_SCREEN_UPDATE_METHOD);
+	/* Various existence checks. */
+	current_dir = opendir(main_path);
+	if (current_dir)
+		closedir(current_dir);
+	else {
+		strcpy(main_path, "fat:/_SYSTEM/PLUGINS/DS2COMP");
+		current_dir = opendir(main_path);
+		if (current_dir)
+			closedir(current_dir);
+		else {
+			fprintf(stderr, "/DS2COMP: Directory missing\nPress any key to return to\nthe menu\n\n/DS2COMP: Dossier manquant\nAppuyer sur une touche pour\nretourner au menu");
+			goto gui_init_err;
+		}
+	}
+
+	show_logo();
+	DS2_UpdateScreen(DS_ENGINE_SUB);
+
+	load_application_config_file();
+	lang_id = application_config.language;
 
 	flag = icon_init(lang_id);
-	if(0 != flag)
-	{
-		err_msg(DOWN_SCREEN, "Some icons are missing\nLoad them onto your card\nPress any key to return to\nthe menu\n\nDes icones sont manquantes\nChargez-les sur votre carte\nAppuyer sur une touche pour\nretourner au menu");
+	if (flag != 0) {
+		fprintf(stderr, "Some icons are missing\nLoad them onto your card\nPress any key to return to\nthe menu\n\nDes icones sont manquantes\nChargez-les sur votre carte\nAppuyer sur une touche pour\nretourner au menu");
+		goto gui_init_err;
+	}
+
+	flag = color_init();
+	if (flag != 0) {
+		fprintf(stderr, "SYSTEM/GUI/uicolors.txt\nis missing\nPress any key to return to\nthe menu\n\nSYSTEM/GUI/uicolors.txt\nest manquant\nAppuyer sur une touche pour\nretourner au menu");
 		goto gui_init_err;
 	}
 
 
 	flag = load_font();
-	if(0 != flag)
-	{
-		char message[512];
-		sprintf(message, "Font library initialisation\nerror (%d)\nPress any key to return to\nthe menu\n\nErreur d'initalisation de la\npolice de caracteres (%d)\nAppuyer sur une touche pour\nretourner au menu", flag, flag);
-		err_msg(DOWN_SCREEN, message);
+	if (flag != 0) {
+		fprintf(stderr, "Font library initialisation\nerror (%d)\nPress any key to return to\nthe menu\n\nErreur d'initalisation de la\npolice de caracteres (%d)\nAppuyer sur une touche pour\nretourner au menu", flag, flag);
 		goto gui_init_err;
 	}
 
-	load_application_config_file();
-	lang_id = application_config.language;
-
 	flag = load_language_msg(LANGUAGE_PACK, lang_id);
-	if(0 != flag)
-	{
-		char message[512];
-		sprintf(message, "Language pack initialisation\nerror (%d)\nPress any key to return to\nthe menu\n\nErreur d'initalisation du\npack de langue (%d)\nAppuyer sur une touche pour\nretourner au menu", flag, flag);
-		err_msg(DOWN_SCREEN, message);
+	if (flag != 0) {
+		fprintf(stderr, "Language pack initialisation\nerror (%d)\nPress any key to return to\nthe menu\n\nErreur d'initalisation du\npack de langue (%d)\nAppuyer sur une touche pour\nretourner au menu", flag, flag);
 		goto gui_init_err;
 	}
 
@@ -2378,7 +1921,6 @@ void gui_init(u32 lang_id)
 	return;
 
 gui_init_err:
-	ds2_flipScreen(DOWN_SCREEN, DOWN_SCREEN_UPDATE_METHOD);
-	wait_Anykey_press(0);
-	quit();
+	DS2_AwaitAnyButtons();
+	exit(EXIT_FAILURE);
 }

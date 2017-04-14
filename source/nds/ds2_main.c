@@ -1,9 +1,9 @@
 /* ds2_main.c
  *
- * Copyright (C) 2010 dking <dking024@gmail.com>
+ * Copyright (C) 2017 Nebuleon Fumika <nebuleon.fumika@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public Licens e as
+ * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
  *
@@ -17,48 +17,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include <stdio.h>
-#include "console.h"
-#include "fs_api.h"
-#include "ds2io.h"
-#include "ds2_cpu.h"
-#include "ds2_timer.h"
-#include "ds2_malloc.h"
+#include <ds2/ds.h>
+#include <ds2/pm.h>
+#include <stdlib.h>
+#include "gui.h"
 
-#define BLACK_COLOR		RGB15(0, 0, 0)
-#define WHITE_COLOR		RGB15(31, 31, 31)
-
-extern int ds2compress_main (int argc, char **argv);
-
-#if 0
-void ddump_mem(unsigned char* addr, unsigned int len)
+int main(int argc, char** argv)
 {
-	unsigned int i;
+	DS2_HighClockSpeed();
 
-	for(i= 0; i < len; i++)
-	{
-		if(i%16 == 0) cprintf("\n%08x: ", i);
-		cprintf("%02x ", addr[i]);
+	DS2_SetPixelFormat(DS_ENGINE_BOTH, DS2_PIXEL_FORMAT_BGR555);
+	DS2_SetScreenSwap(true);
+
+	gui_init(0);
+
+	while (1) {
+		menu();
 	}
+
+	return EXIT_SUCCESS;
 }
-#endif
-
-void ds2_main(void)
-{
-	int err;
-	ds2_setCPUclocklevel(13);
-	//Initial video and other input and output
-	err = ds2io_init(1024);
-	if(err) goto _failure;
-
-	//Initial file system
-	err = fat_init();
-	if(err) goto _failure;
-
-	//go to user main funtion
-	ds2compress_main (0, 0);
-
-_failure:
-	ds2_plug_exit();
-}
-

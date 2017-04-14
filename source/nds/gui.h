@@ -20,11 +20,9 @@
 #ifndef __GUI_H__
 #define __GUI_H__
 
-#include "ds2_types.h"
-#include "fs_api.h"
-
-#define UP_SCREEN_UPDATE_METHOD   2
-#define DOWN_SCREEN_UPDATE_METHOD 2
+#include <limits.h>  /* For PATH_MAX */
+#include <stdint.h>
+#include <time.h>
 
 // For general option text
 #define OPTION_TEXT_X             10
@@ -39,13 +37,13 @@
 // The following offset is added to the row's Y coordinate to provide
 // the Y coordinate for its ICON_SUBSELA (sub-screen selection type A).
 #define SUBSELA_OFFSET_Y          -2
-#define SUBSELA_X                 ((NDS_SCREEN_WIDTH - ICON_SUBSELA.x) / 2)
+#define SUBSELA_X                 ((DS_SCREEN_WIDTH - ICON_SUBSELA.x) / 2)
 
 // For message boxes
-#define MESSAGE_BOX_TEXT_X        ((NDS_SCREEN_WIDTH - ICON_MSG.x) / 2 + 3)
+#define MESSAGE_BOX_TEXT_X        ((DS_SCREEN_WIDTH - ICON_MSG.x) / 2 + 3)
 #define MESSAGE_BOX_TEXT_SX       (ICON_MSG.x - 6)
 // Y is brought down by the "window title" that's part of ICON_MSG
-#define MESSAGE_BOX_TEXT_Y        ((NDS_SCREEN_HEIGHT - ICON_MSG.y) / 2 + 24)
+#define MESSAGE_BOX_TEXT_Y        ((DS_SCREEN_HEIGHT - ICON_MSG.y) / 2 + 24)
 
 // For the file selector
 #define FILE_SELECTOR_ICON_X      10
@@ -60,6 +58,9 @@
 #define TITLE_ICON_X              12
 #define TITLE_ICON_Y              9
 
+#define BUTTON_REPEAT_START (CLOCKS_PER_SEC / 2) /* 1/2 of a second */
+#define BUTTON_REPEAT_CONTINUE (CLOCKS_PER_SEC / 20) /* 1/20 of a second */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -67,9 +68,9 @@ extern "C" {
 //
 struct _APPLICATION_CONFIG
 {
-  u32 language;
-  u32 CompressionLevel;
-  u32 Reserved[126];
+  uint32_t language;
+  uint32_t CompressionLevel;
+  uint32_t Reserved[126];
 };
 
 typedef enum
@@ -88,11 +89,11 @@ typedef enum
   CURSOR_TOUCH
 } gui_action_type;
 
-extern char main_path[MAX_PATH];
+extern char main_path[PATH_MAX];
 
 /******************************************************************************
  ******************************************************************************/
-extern char g_default_rom_dir[MAX_PATH];
+extern char g_default_rom_dir[PATH_MAX];
 
 typedef struct _APPLICATION_CONFIG		APPLICATION_CONFIG;
 
@@ -100,18 +101,19 @@ extern APPLICATION_CONFIG	application_config;
 
 /******************************************************************************
  ******************************************************************************/
-extern void gui_init(u32 lang_id);
-extern u32 menu();
-extern int load_language_msg(char *filename, u32 language);
+extern void gui_init(uint32_t lang_id);
+extern uint32_t menu();
+extern gui_action_type get_gui_input(void);
+extern int load_language_msg(const char *filename, uint32_t language);
 
-extern void InitMessage (void);
-extern void FiniMessage (void);
-extern void InitProgress (char *Action, char *Filename, unsigned int TotalSize);
-extern void UpdateProgress (unsigned int DoneSize);
-extern void InitProgressMultiFile (char *Action, char *Filename, unsigned int TotalFiles);
-extern void UpdateProgressChangeFile (unsigned int CurrentFile, char *Filename, unsigned int TotalSize);
-extern void UpdateProgressMultiFile (unsigned int DoneSize);
-extern unsigned int ReadInputDuringCompression ();
+extern void InitMessage(void);
+extern void FiniMessage(void);
+extern void InitProgress(const char *Action, const char *Filename, unsigned int TotalSize);
+extern void UpdateProgress(unsigned int DoneSize);
+extern void InitProgressMultiFile(const char *Action, const char *Filename, unsigned int TotalFiles);
+extern void UpdateProgressChangeFile(unsigned int CurrentFile, const char *Filename, unsigned int TotalSize);
+extern void UpdateProgressMultiFile(unsigned int DoneSize);
+extern uint16_t ReadInputDuringCompression(void);
 
 #ifdef __cplusplus
 }

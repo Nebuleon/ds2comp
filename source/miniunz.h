@@ -1,3 +1,3 @@
 #include "zlib.h"
 
-int  ZipUncompress   OF((char  *file));
+int  ZipUncompress   OF((const char  *file));
