@@ -457,17 +457,23 @@ void UpdateProgressMultiFile(unsigned int DoneSize)
 
 void InitMessage(void)
 {
-	DS2_LowClockSpeed();
 	DS2_SetScreenBacklights(DS_SCREEN_BOTH);
-
+	DS2_AwaitScreenUpdate(DS_ENGINE_SUB);
 	draw_message_box(DS2_GetSubScreen());
+
+	DS2_LowClockSpeed();
 }
 
 void FiniMessage(void)
 {
-	DS2_SetScreenBacklights(DS_SCREEN_UPPER);
 	DS2_AwaitNoButtons();
 	DS2_HighClockSpeed();
+
+	DS2_SetScreenBacklights(DS_SCREEN_UPPER);
+
+	DS2_AwaitScreenUpdate(DS_ENGINE_SUB);
+	DS2_FillScreen(DS_ENGINE_SUB, COLOR_BLACK);
+	DS2_UpdateScreen(DS_ENGINE_SUB);
 }
 
 uint16_t ReadInputDuringCompression(void)
@@ -1265,6 +1271,9 @@ uint32_t menu()
 
 //----------------------------------------------------------------------------//
 //	Menu Start
+	DS2_FillScreen(DS_ENGINE_MAIN, COLOR_BLACK);
+	DS2_FlipMainScreen();
+
 	DS2_LowClockSpeed();
 	DS2_SetScreenBacklights(DS_SCREEN_LOWER);
 	
