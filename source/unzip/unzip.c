@@ -27,10 +27,6 @@ extern int      errno;
 const char      unz_copyright[] =
 " unzip 0.15 Copyright 1998 Gilles Vollant ";
 
-void unShrink ();
-void unReduce ();
-int explode ();
-
 /*
  * ===========================================================================
  * Read a byte from a gz_stream; update next_in and avail_in. Return EOF for
@@ -986,21 +982,6 @@ unzReadCurrentFile (
 	    iRead += uDoCopy;
 	    break;
 	}
-	case UNZ_SHRUNK:
-	    iRead = pfile_in_zip_read_info->rest_read_uncompressed;
-	    unShrink ();
-	    break;
-	case UNZ_REDUCED1:
-	case UNZ_REDUCED2:
-	case UNZ_REDUCED3:
-	case UNZ_REDUCED4:
-	    iRead = pfile_in_zip_read_info->rest_read_uncompressed;
-	    unReduce ();
-	    break;
-	case UNZ_IMPLODED:
-	    iRead = pfile_in_zip_read_info->rest_read_uncompressed;
-	    err = explode ();
-	    break;
 	case UNZ_DEFLATED:
 	{
 	    uLong           uTotalOutBefore, uTotalOutAfter;

@@ -14,8 +14,7 @@ OUTPUT      := ds2comp
 PLUGIN_DIR  := DS2COMP
 
 # - - - Sources and objects - - -
-C_SOURCES   = source/unzip/explode.c source/unzip/unreduce.c \
-              source/unzip/unshrink.c source/unzip/unzip.c \
+C_SOURCES   = source/unzip/unzip.c \
               source/nds/bdf_font.c source/nds/bitmap.c \
               source/nds/draw.c source/nds/ds2_main.c \
               source/nds/gui.c source/minigzip.c source/miniunz.c
