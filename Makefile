@@ -14,7 +14,7 @@ OUTPUT      := ds2comp
 PLUGIN_DIR  := DS2COMP
 
 # - - - Sources and objects - - -
-C_SOURCES   = source/unzip/unzip.c \
+C_SOURCES   = source/unzip/unzip.c source/unzip/ioapi.c \
               source/nds/bdf_font.c source/nds/bitmap.c \
               source/nds/draw.c source/nds/ds2_main.c \
               source/nds/gui.c source/minigzip.c source/miniunz.c
@@ -25,7 +25,8 @@ CPP_OBJECTS  = $(CPP_SOURCES:.cpp=.o)
 OBJECTS      = $(C_OBJECTS) $(CPP_OBJECTS)
 
 # - - - Compilation flags - - -
-DEFS        := -DHAVE_MKSTEMP '-DACCEPT_SIZE_T=size_t'
+DEFS        := -DHAVE_MKSTEMP '-DACCEPT_SIZE_T=size_t'                        \
+               -DUSE_FILE32API -DHAS_STDINT_H
 
 CFLAGS      += -fno-builtin -ffunction-sections -O3                           \
                $(DEFS) $(INCLUDE)
