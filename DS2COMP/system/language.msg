@@ -112,89 +112,6 @@ Failed to completely write the destination file. Check that the storage card is 
 
 ENDENGLISH
 
-STARTDUTCH
-
-#MSG_MAIN_MENU_COMPRESS
-Comprimeren
-#MSG_MAIN_MENU_DECOMPRESS
-Uitpakken
-#MSG_MAIN_MENU_OPTIONS
-Opties
-#MSG_MAIN_MENU_EXIT
-Afsluiten
-#MSG_FILE_MENU_LOADING_LIST
-Laden...
-#MSG_FILE_MENU_SORTING_LIST
-Sorteren...
-#FMT_OPTIONS_COMPRESSION_LEVEL
-Compressieniveau
-#FMT_OPTIONS_LANGUAGE
-Taal
-#MSG_OPTIONS_CARD_CAPACITY
-Kaartcapaciteit
-#MSG_OPTIONS_RESET
-Herstel standaardinstellingen
-#MSG_OPTIONS_VERSION
-Versie-informatie
-#MSG_GENERAL_OFF
-Uit
-#MSG_GENERAL_ON
-Aan
-#MSG_GENERAL_CONFIRM_WITH_A
-*A Bevestig
-#MSG_GENERAL_CANCEL_WITH_B
-*B Annuleer
-#MSG_GENERAL_YES_WITH_A
-*A Ja
-#MSG_GENERAL_NO_WITH_B
-*B Nee
-#MSG_CHANGE_LANGUAGE
-Taal veranderen...
-#MSG_CHANGE_LANGUAGE_WAITING
-Een ogenblik geduld A.U.B.
-#MSG_APPLICATION_NAME
-DS2Compress gzip bestandsafhandelaar
-#MSG_WORD_APPLICATION_VERSION
-Versie
-#MSG_DIALOG_RESET
-Wilt U alles terugzetten naar de standaardinstellingen?
-#MSG_PROGRESS_RESETTING
-Een ogenblik geduld A.U.B.
-#MSG_DIALOG_OVERWRITE_EXISTING_FILE
-Doelbestand bestaat al. Wilt U het overschrijven?
-#MSG_DIALOG_OVERWRITE_ALL_FILES
-Wilt U alle bestaande bestanden voor dit .zip archief overschrijven?
-#MSG_DIALOG_LEAVE_ALL_FILES
-Wilt U alle bestaande bestanden voor dit .zip archief in tact laten?
-#MSG_FILE_OVERWRITE_WITH_A
-*A Overschrijf
-#MSG_FILE_LEAVE_WITH_B
-*B Verlaat
-#MSG_PROGRESS_COMPRESSING
-Aan het comprimeren...
-#MSG_PROGRESS_DECOMPRESSING
-Aan het uitpakken...
-#MSG_PROGRESS_KIBIBYTE_COUNT
-%d van %d KiB
-#MSG_PROGRESS_ARCHIVE_MEMBER_AND_KIBIBYTE_COUNT
-Bestand %d uit %d  -  %d van %d KiB
-#MSG_PROGRESS_CANCEL_WITH_B
-*B Annuleren
-#MSG_ERROR_INPUT_FILE_READ
-Het lezen van de bestandsinvoer is niet geslaagd. Controleer of het opslagmedium correct beveiligd is.
-#MSG_ERROR_COMPRESSED_FILE_READ
-Het lezen van het gecomprimeerde bestand is niet geslaagd. Het bestand kan corrupt zijn. Controleer of de opslagmedium correct beveiligd is.
-#MSG_ERROR_OUTPUT_FILE_OPEN
-Het creëren van het doelbestand is niet geslaagd. Het opslagmedium heeft waarschijnlijk niet genoeg ruimte over, het bestand bestaat al als map, de naam is te lang of de hoofdmap bevat 512 items.
-#MSG_ERROR_OUTPUT_FILE_WRITE
-Het schrijven naar het doelbestand is niet geslaagd. Controleer of het opslagmedium correct beveiligd is en dat er genoeg ruimte beschikbaar is.
-#MSG_ERROR_RETRY_WITH_A
-*A Opnieuw
-#MSG_ERROR_ABORT_WITH_B
-*B Afbreken
-
-ENDDUTCH
-
 STARTFRENCH
 
 #MSG_MAIN_MENU_COMPRESS
@@ -443,3 +360,86 @@ Fehler beim Erstellen der Zieldatei. Bitte die Karte überprüfen und sicherstel
 *B Abbruch
 
 ENDGERMAN
+
+STARTDUTCH
+
+#MSG_MAIN_MENU_COMPRESS
+Comprimeren
+#MSG_MAIN_MENU_DECOMPRESS
+Uitpakken
+#MSG_MAIN_MENU_OPTIONS
+Opties
+#MSG_MAIN_MENU_EXIT
+Afsluiten
+#MSG_FILE_MENU_LOADING_LIST
+Laden...
+#MSG_FILE_MENU_SORTING_LIST
+Sorteren...
+#FMT_OPTIONS_COMPRESSION_LEVEL
+Compressieniveau
+#FMT_OPTIONS_LANGUAGE
+Taal
+#MSG_OPTIONS_CARD_CAPACITY
+Kaartcapaciteit
+#MSG_OPTIONS_RESET
+Herstel standaardinstellingen
+#MSG_OPTIONS_VERSION
+Versie-informatie
+#MSG_GENERAL_OFF
+Uit
+#MSG_GENERAL_ON
+Aan
+#MSG_GENERAL_CONFIRM_WITH_A
+*A Bevestig
+#MSG_GENERAL_CANCEL_WITH_B
+*B Annuleer
+#MSG_GENERAL_YES_WITH_A
+*A Ja
+#MSG_GENERAL_NO_WITH_B
+*B Nee
+#MSG_CHANGE_LANGUAGE
+Taal veranderen...
+#MSG_CHANGE_LANGUAGE_WAITING
+Een ogenblik geduld A.U.B.
+#MSG_APPLICATION_NAME
+DS2Compress gzip bestandsafhandelaar
+#MSG_WORD_APPLICATION_VERSION
+Versie
+#MSG_DIALOG_RESET
+Wilt U alles terugzetten naar de standaardinstellingen?
+#MSG_PROGRESS_RESETTING
+Een ogenblik geduld A.U.B.
+#MSG_DIALOG_OVERWRITE_EXISTING_FILE
+Doelbestand bestaat al. Wilt U het overschrijven?
+#MSG_DIALOG_OVERWRITE_ALL_FILES
+Wilt U alle bestaande bestanden voor dit .zip archief overschrijven?
+#MSG_DIALOG_LEAVE_ALL_FILES
+Wilt U alle bestaande bestanden voor dit .zip archief in tact laten?
+#MSG_FILE_OVERWRITE_WITH_A
+*A Overschrijf
+#MSG_FILE_LEAVE_WITH_B
+*B Verlaat
+#MSG_PROGRESS_COMPRESSING
+Aan het comprimeren...
+#MSG_PROGRESS_DECOMPRESSING
+Aan het uitpakken...
+#MSG_PROGRESS_KIBIBYTE_COUNT
+%d van %d KiB
+#MSG_PROGRESS_ARCHIVE_MEMBER_AND_KIBIBYTE_COUNT
+Bestand %d uit %d  -  %d van %d KiB
+#MSG_PROGRESS_CANCEL_WITH_B
+*B Annuleren
+#MSG_ERROR_INPUT_FILE_READ
+Het lezen van de bestandsinvoer is niet geslaagd. Controleer of het opslagmedium correct beveiligd is.
+#MSG_ERROR_COMPRESSED_FILE_READ
+Het lezen van het gecomprimeerde bestand is niet geslaagd. Het bestand kan corrupt zijn. Controleer of de opslagmedium correct beveiligd is.
+#MSG_ERROR_OUTPUT_FILE_OPEN
+Het creëren van het doelbestand is niet geslaagd. Het opslagmedium heeft waarschijnlijk niet genoeg ruimte over, het bestand bestaat al als map, de naam is te lang of de hoofdmap bevat 512 items.
+#MSG_ERROR_OUTPUT_FILE_WRITE
+Het schrijven naar het doelbestand is niet geslaagd. Controleer of het opslagmedium correct beveiligd is en dat er genoeg ruimte beschikbaar is.
+#MSG_ERROR_RETRY_WITH_A
+*A Opnieuw
+#MSG_ERROR_ABORT_WITH_B
+*B Afbreken
+
+ENDDUTCH

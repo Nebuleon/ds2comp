@@ -43,10 +43,11 @@ char main_path[PATH_MAX];
 // message.h too.
 const char *lang[LANG_END] =
 {
-	"English",   // 0
-	"Français",  // 1
-	"Español",   // 2
-	"Deutsch",   // 3
+	"English",     // 0
+	"Français",    // 1
+	"Español",     // 2
+	"Deutsch",     // 3
+	"Nederlands",  // 4
 };
 
 const char *msg[MSG_END + 1];
@@ -1802,6 +1803,10 @@ int load_language_msg(const char *filename, uint32_t language)
 	case GERMAN:
 		start = "STARTGERMAN";
 		end = "ENDGERMAN";
+		break;
+	case DUTCH:
+		start = "STARTDUTCH";
+		end = "ENDDUTCH";
 		break;
 	}
 	size_t start_len = strlen(start), end_len = strlen(end);

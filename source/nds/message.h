@@ -80,6 +80,7 @@ enum LANGUAGE {
 	FRENCH,
 	SPANISH,
 	GERMAN,
+	DUTCH,
 	LANG_END  /* Must be last */
 };
 
