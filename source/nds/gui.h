@@ -54,6 +54,8 @@
 // Back button
 #define BACK_BUTTON_X             229
 #define BACK_BUTTON_Y             10
+#define BACK_BUTTON_TOUCH_X       216  /* ... and going right */
+#define BACK_BUTTON_TOUCH_Y       33   /* ... and going up */
 // Title icon
 #define TITLE_ICON_X              12
 #define TITLE_ICON_Y              9

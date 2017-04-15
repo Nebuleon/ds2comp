@@ -49,8 +49,6 @@ const char *lang[LANG_END] =
 	"Deutsch",   // 3
 };
 
-const char *language_options[] = { (char *) &lang[0], (char *) &lang[1], (char *) &lang[2], (char *) &lang[3] };
-
 const char *msg[MSG_END + 1];
 char msg_data[16 * 1024] __attribute__((section(".noinit")));
 
@@ -84,170 +82,6 @@ const char HOTKEY_LEFT_DISPLAY[] = "\xE2\x86\x90";
 const char HOTKEY_UP_DISPLAY[] = "\xE2\x86\x91";
 const char HOTKEY_RIGHT_DISPLAY[] = "\xE2\x86\x92";
 const char HOTKEY_DOWN_DISPLAY[] = "\xE2\x86\x93";
-
-#define MAKE_MENU(name, init_function, passive_function, key_function, end_function, \
-	focus_option, screen_focus)												  \
-  MENU_TYPE name##_menu =                                                     \
-  {                                                                           \
-    init_function,                                                            \
-    passive_function,                                                         \
-	key_function,															  \
-	end_function,															  \
-    name##_options,                                                           \
-    sizeof(name##_options) / sizeof(MENU_OPTION_TYPE),                        \
-	focus_option,															  \
-	screen_focus															  \
-  }                                                                           \
-
-#define INIT_MENU(name, init_functions, passive_functions, key, end, focus, screen)\
-	{																		  \
-    name##_menu.init_function = init_functions,								  \
-    name##_menu.passive_function = passive_functions,						  \
-	name##_menu.key_function = key,											  \
-	name##_menu.end_function = end,											  \
-    name##_menu.options = name##_options,									  \
-    name##_menu.num_options = sizeof(name##_options) / sizeof(MENU_OPTION_TYPE),\
-	name##_menu.focus_option = focus,										  \
-	name##_menu.screen_focus = screen;										  \
-	}																		  \
-
-#define ACTION_OPTION(action_function, passive_function, display_string,      \
- help_string, line_number)                                                    \
-{                                                                             \
-  action_function,                                                            \
-  passive_function,                                                           \
-  NULL,                                                                       \
-  display_string,                                                             \
-  NULL,                                                                       \
-  NULL,                                                                       \
-  0,                                                                          \
-  help_string,                                                                \
-  line_number,                                                                \
-  ACTION_TYPE                                                               \
-}                                                                             \
-
-#define SUBMENU_OPTION(sub_menu, display_string, help_string, line_number)    \
-{                                                                             \
-  NULL,                                                                       \
-  NULL,                                                                       \
-  sub_menu,                                                                   \
-  display_string,                                                             \
-  NULL,                                                                       \
-  NULL,                                                                       \
-  sizeof(sub_menu) / sizeof(MENU_OPTION_TYPE),                                \
-  help_string,                                                                \
-  line_number,                                                                \
-  SUBMENU_TYPE                                                              \
-}                                                                             \
-
-#define SELECTION_OPTION(passive_function, display_string, options,           \
- option_ptr, num_options, help_string, line_number, type)                     \
-{                                                                             \
-  NULL,                                                                       \
-  passive_function,                                                           \
-  NULL,                                                                       \
-  display_string,                                                             \
-  options,                                                                    \
-  option_ptr,                                                                 \
-  num_options,                                                                \
-  help_string,                                                                \
-  line_number,                                                                \
-  type                                                                        \
-}                                                                             \
-
-#define ACTION_SELECTION_OPTION(action_function, passive_function,            \
- display_string, options, option_ptr, num_options, help_string, line_number,  \
- type)                                                                        \
-{                                                                             \
-  action_function,                                                            \
-  passive_function,                                                           \
-  NULL,                                                                       \
-  display_string,                                                             \
-  options,                                                                    \
-  option_ptr,                                                                 \
-  num_options,                                                                \
-  help_string,                                                                \
-  line_number,                                                                \
-  type | ACTION_TYPE                                                        \
-}                                                                             \
-
-#define STRING_SELECTION_OPTION(action_function, passive_function,            \
-    display_string, options, option_ptr, num_options, help_string, action, line_number)\
-{                                                                             \
-  action_function,                                                            \
-  passive_function,                                                           \
-  NULL,                                                                       \
-  display_string,                                                             \
-  options,                                                                    \
-  option_ptr,                                                                 \
-  num_options,                                                                \
-  help_string,                                                                \
-  line_number,                                                                \
-  STRING_SELECTION_TYPE | action                                              \
-}
-
-#define NUMERIC_SELECTION_OPTION(passive_function, display_string,            \
- option_ptr, num_options, help_string, line_number)                           \
-  SELECTION_OPTION(passive_function, display_string, NULL, option_ptr,        \
-   num_options, help_string, line_number, NUMBER_SELECTION_TYPE)              \
-
-#define STRING_SELECTION_HIDEN_OPTION(action_function, passive_function,      \
- display_string, options, option_ptr, num_options, help_string, line_number)  \
-  ACTION_SELECTION_OPTION(action_function, passive_function,                  \
-   display_string,  options, option_ptr, num_options, help_string,            \
-   line_number, (STRING_SELECTION_TYPE | HIDEN_TYPE))                         \
-
-#define NUMERIC_SELECTION_ACTION_OPTION(action_function, passive_function,    \
- display_string, option_ptr, num_options, help_string, line_number)           \
-  ACTION_SELECTION_OPTION(action_function, passive_function,                  \
-   display_string,  NULL, option_ptr, num_options, help_string,               \
-   line_number, NUMBER_SELECTION_TYPE)                                        \
-
-#define NUMERIC_SELECTION_HIDE_OPTION(action_function, passive_function,      \
-    display_string, option_ptr, num_options, help_string, line_number)        \
-  ACTION_SELECTION_OPTION(action_function, passive_function,                  \
-   display_string, NULL, option_ptr, num_options, help_string,                \
-   line_number, NUMBER_SELECTION_TYPE)                                        \
-
-
-typedef enum
-{
-	NUMBER_SELECTION_TYPE = 0x01,
-	STRING_SELECTION_TYPE = 0x02,
-	SUBMENU_TYPE          = 0x04,
-	ACTION_TYPE           = 0x08,
-	HIDEN_TYPE            = 0x10,
-	PASSIVE_TYPE          = 0x00,
-} MENU_OPTION_TYPE_ENUM;
-
-struct _MENU_OPTION_TYPE
-{
-	void (* action_function)();				//Active option to process input
-	void (* passive_function)();			//Passive function to process this option
-	struct _MENU_TYPE *sub_menu;			//Sub-menu of this option
-	const char **display_string;			//Name and other things of this option
-	void *options;							//output value of this option
-	uint32_t *current_option;					//output values
-	uint32_t num_options;						//Total output values
-	char **help_string;						//Help string
-	uint32_t line_number;						//Order id of this option in it menu
-	MENU_OPTION_TYPE_ENUM option_type;		//Option types
-};
-
-struct _MENU_TYPE
-{
-	void (* init_function)();				//Function to initialize this menu
-	void (* passive_function)();			//Function to draw this menu
-	void (* key_function)();				//Function to process input
-	void (* end_function)();				//End process of this menu
-	struct _MENU_OPTION_TYPE *options;		//Options array
-	uint32_t	num_options;						//Total options of this menu
-	uint32_t	focus_option;						//Option which obtained focus
-	uint32_t	screen_focus;						//screen positon of the focus option
-};
-
-typedef struct _MENU_OPTION_TYPE MENU_OPTION_TYPE;
-typedef struct _MENU_TYPE MENU_TYPE;
 
 /******************************************************************************
  ******************************************************************************/
@@ -928,663 +762,1008 @@ cleanup:
 	return ret;
 }
 
-/*--------------------------------------------------------
-	Main Menu
---------------------------------------------------------*/
-uint32_t menu()
+/* --- THE MENU --- */
+
+enum EntryKind {
+	KIND_ACTION,
+	KIND_OPTION,
+	KIND_SUBMENU,
+	KIND_DISPLAY,
+	KIND_CUSTOM,
+};
+
+enum DataType {
+	TYPE_STRING,
+	TYPE_INT32,
+	TYPE_UINT32,
+	TYPE_INT64,
+	TYPE_UINT64,
+};
+
+struct TouchBounds {
+	uint32_t X1; /* The left bound. */
+	uint32_t Y1; /* The top bound. */
+	uint32_t X2; /* The right bound, exclusive. */
+	uint32_t Y2; /* The bottom bound, exclusive. */
+};
+
+struct Entry;
+
+struct Menu;
+
+/*
+ * ModifyFunction is the type of a function that acts on an input in the
+ * menu. The function is assigned this input via the Entry struct's
+ * various button functions, Init, End, etc.
+ * Input:
+ *   1: On entry into the function, points to a memory location containing
+ *     a pointer to the active menu. On exit from the function, the menu may
+ *     be modified to a new one, in which case the function has chosen to
+ *     activate that new menu; the End of the old menu is called,
+ *     then the Init function of the new menu is called.
+ *
+ *     The exception to this rule is the NULL menu. If NULL is chosen to be
+ *     activated, then no Init function is called; additionally, the menu is
+ *     exited.
+ *   2: On entry into the function, points to a memory location containing the
+ *     index among the active menu's Entries array corresponding to the active
+ *     menu entry. On exit from the function, the menu entry index may be
+ *     modified to a new one, in which case the function has chosen to
+ *     activate that new menu entry.
+ */
+typedef void (*ModifyFunction) (struct Menu**, uint32_t*);
+
+/*
+ * EntryDisplayFunction is the type of a function that displays an element
+ * (the name or the value, depending on which member receives a function of
+ * this type) of a single menu entry.
+ * Input:
+ *   1: A pointer to the data for the menu entry whose part is being drawn.
+ *   2: A pointer to the data for the active menu entry.
+ *   3: The position, expressed as a line number starting at 0, of the entry
+ *     part to be drawn.
+ */
+typedef void (*EntryDisplayFunction) (struct Entry*, struct Entry*, uint32_t);
+
+/*
+ * EntryCanFocusFunction is the type of a function that determines whether
+ * a menu entry can receive the focus.
+ * Input:
+ *   1: The menu containing the entry that is being tested.
+ *   2: The menu entry that is being tested.
+ *   3: The index of the entry within its containing menu.
+ */
+typedef bool (*EntryCanFocusFunction) (struct Menu*, struct Entry*, uint32_t);
+
+/*
+ * EntryFunction is the type of a function that displays all data related
+ * to a menu or that modifies the Target variable of the active menu entry.
+ * Input:
+ *   1: The menu containing the entries that are being drawn, or the entry
+ *     whose Target variable is being modified.
+ *   2: The active menu entry.
+ */
+typedef void (*EntryFunction) (struct Menu*, struct Entry*);
+
+/*
+ * EntryTouchBoundsFunction is the type of a function that determines the
+ * bounds of a menu entry.
+ * Input:
+ *   1: A pointer to the data for the menu containing the entry whose touch
+ *     bounds are being queried.
+ *   2: A pointer to the data for the menu entry whose touch bounds are being
+ *     queried.
+ *   3: The position, expressed as a line number starting at 0, of the entry.
+ * Output:
+ *   4: The bounds of the entry's touch rectangle.
+ */
+typedef void (*EntryTouchBoundsFunction) (struct Menu*, struct Entry*, uint32_t, struct TouchBounds*);
+
+/*
+ * EntryTouchFunction is the type of a function that acts on touches in the
+ * menu.
+ * Input:
+ *   1: On entry into the function, points to a memory location containing
+ *     a pointer to the active menu. On exit from the function, the menu may
+ *     be modified to a new one, in which case the function has chosen to
+ *     activate that new menu; the End of the old menu is called,
+ *     then the Init function of the new menu is called.
+ *
+ *     The exception to this rule is the NULL menu. If NULL is chosen to be
+ *     activated, then no Init function is called; additionally, the menu is
+ *     exited.
+ *   2: On entry into the function, points to a memory location containing the
+ *     index among the active menu's Entries array that has been touched. It
+ *     is updated by the input dispatch function. On exit from the function,
+ *     the menu entry index may be modified to a new one, in which case the
+ *     function has chosen to activate that new menu entry.
+ *   3: The X coordinate of the touch.
+ *   4: The Y coordinate of the touch.
+ */
+typedef void (*EntryTouchFunction) (struct Menu**, uint32_t*, uint32_t X, uint32_t Y);
+
+/*
+ * InitFunction is the type of a function that runs when a menu is being
+ * initialised.
+ * Variables:
+ *   1: A pointer to a variable holding the menu that is being initialised.
+ *   On exit from the function, the menu may be modified to a new one, in
+ *   which case the function has chosen to activate that new menu. This can
+ *   be used when the initialisation has failed for some reason.
+ */
+typedef void (*InitFunction) (struct Menu**);
+
+/*
+ * MenuFunction is the type of a function that runs when a menu is being
+ * finalised or drawn.
+ * Input:
+ *   1: The menu that is being finalised or drawn.
+ */
+typedef void (*MenuFunction) (struct Menu*);
+
+/*
+ * ActionFunction is the type of a function that runs after changes to the
+ * value of an option (if the entry kind is KIND_OPTION), or to respond to
+ * pressing the action button (if the entry kind is KIND_ACTION).
+ */
+typedef void (*ActionFunction) (void);
+
+struct Entry {
+	enum EntryKind Kind;
+	const char** Name;
+	enum DataType DisplayType;
+	void* Target;           // With KIND_OPTION, must point to uint32_t.
+	                        // With KIND_DISPLAY, must point to the data type
+	                        // specified by DisplayType.
+	                        // With KIND_SUBMENU, this is struct Menu*.
+	// Choices and ChoiceCount are only used with KIND_OPTION.
+	ModifyFunction Enter;
+	EntryFunction Left;
+	EntryFunction Right;
+	EntryTouchBoundsFunction TouchBounds;
+	EntryTouchFunction Touch;
+	EntryDisplayFunction DisplayName;
+	EntryDisplayFunction DisplayValue;
+	EntryCanFocusFunction CanFocus;
+	ActionFunction Action;
+	void* UserData;
+	uint32_t ChoiceCount;
+	const char** Choices[];
+};
+
+struct Menu {
+	struct Menu* Parent;
+	const char** Title;
+	MenuFunction DisplayBackground;
+	MenuFunction DisplayTitle;
+	EntryFunction DisplayData;
+	ModifyFunction InputDispatch;
+	ModifyFunction Up;
+	ModifyFunction Down;
+	ModifyFunction Leave;
+	InitFunction Init;
+	MenuFunction End;
+	void* UserData;
+	uint32_t ActiveEntryIndex;
+	struct Entry* Entries[]; // Entries are ended by a NULL pointer value.
+};
+
+static bool DefaultCanFocus(struct Menu* ActiveMenu, struct Entry* ActiveEntry, uint32_t Position)
 {
-    gui_action_type gui_action;
-    uint32_t i;
-    uint32_t repeat;
-    uint32_t return_value = 0;
-    char tmp_filename[NAME_MAX];
-    char line_buffer[512];
+	if (ActiveEntry->Kind == KIND_DISPLAY)
+		return false;
+	return true;
+}
 
-    MENU_TYPE *current_menu = NULL;
-    MENU_OPTION_TYPE *current_option = NULL;
-    MENU_OPTION_TYPE *display_option = NULL;
-    
-    uint32_t current_option_num;
-//    uint32_t parent_option_num;
-    uint32_t string_select;
+static uint32_t FindNullEntry(struct Menu* ActiveMenu)
+{
+	uint32_t Result = 0;
+	while (ActiveMenu->Entries[Result] != NULL)
+		Result++;
+	return Result;
+}
 
-    uint16_t *bg_screenp;
-    uint32_t bg_screenp_color;
-
-	auto void menu_exit();
-	auto void choose_menu();
-	auto void main_menu_passive();
-	auto void main_menu_key();
-	auto void menu_load_for_compression();
-	auto void menu_load_for_decompression();
-	auto void others_menu_init();
-	auto void others_menu_end();
-	auto void check_application_version();
-	auto void language_set();
-
-//Local function definition
-
-	void menu_exit()
-	{
-		DS2_HighClockSpeed(); // Crank it up, leave quickly
-		quit();
+static bool MoveUp(struct Menu* ActiveMenu, uint32_t* ActiveEntryIndex)
+{
+	if (*ActiveEntryIndex == 0) {  // Going over the top?
+		// Go back to the bottom.
+		uint32_t NullEntry = FindNullEntry(ActiveMenu);
+		if (NullEntry == 0)
+			return false;
+		*ActiveEntryIndex = NullEntry - 1;
+		return true;
 	}
+	(*ActiveEntryIndex)--;
+	return true;
+}
 
-	void menu_load_for_compression()
-	{
-		const char *file_ext[] = { NULL }; // Show all files
+static bool MoveDown(struct Menu* ActiveMenu, uint32_t* ActiveEntryIndex)
+{
+	if (*ActiveEntryIndex == 0 && ActiveMenu->Entries[*ActiveEntryIndex] == NULL)
+		return false;
+	if (ActiveMenu->Entries[*ActiveEntryIndex] == NULL)  // Is the sentinel "active"?
+		*ActiveEntryIndex = 0;  // Go back to the top.
+	(*ActiveEntryIndex)++;
+	if (ActiveMenu->Entries[*ActiveEntryIndex] == NULL)  // Going below the bottom?
+		*ActiveEntryIndex = 0;  // Go back to the top.
+	return true;
+}
 
-		if(load_file(file_ext, tmp_filename, g_default_rom_dir) != -1)
-		{
-			strcpy(line_buffer, g_default_rom_dir);
-			strcat(line_buffer, "/");
-			strcat(line_buffer, tmp_filename);
-
-			DS2_FillScreen(DS_ENGINE_SUB, COLOR_BLACK);
-			DS2_UpdateScreen(DS_ENGINE_SUB);
-
-			DS2_SetScreenBacklights(DS_SCREEN_UPPER);
-
-			DS2_HighClockSpeed();
-			uint32_t level = application_config.CompressionLevel;
-			if (level == 0)
-				level = 1;
-			else if (level > 9)
-				level = 9;
-			while (!GzipCompress(line_buffer, level)); // retry if needed
-			DS2_LowClockSpeed();
-
-			return_value = 1;
-			repeat = 0;
-		}
-		else
-		{
-			choose_menu(current_menu);
+static void DefaultUp(struct Menu** ActiveMenu, uint32_t* ActiveEntryIndex)
+{
+	if (MoveUp(*ActiveMenu, ActiveEntryIndex)) {
+		// Keep moving up until a menu entry can be focused.
+		uint32_t Sentinel = *ActiveEntryIndex;
+		EntryCanFocusFunction CanFocus = (*ActiveMenu)->Entries[*ActiveEntryIndex]->CanFocus;
+		if (CanFocus == NULL) CanFocus = DefaultCanFocus;
+		while (!CanFocus(*ActiveMenu, (*ActiveMenu)->Entries[*ActiveEntryIndex], *ActiveEntryIndex)) {
+			MoveUp(*ActiveMenu, ActiveEntryIndex);
+			if (*ActiveEntryIndex == Sentinel) {
+				// If we went through all of them, we cannot focus anything.
+				// Place the focus on the NULL entry.
+				*ActiveEntryIndex = FindNullEntry(*ActiveMenu);
+				return;
+			}
+			CanFocus = (*ActiveMenu)->Entries[*ActiveEntryIndex]->CanFocus;
+			if (CanFocus == NULL) CanFocus = DefaultCanFocus;
 		}
 	}
+}
 
-	void menu_load_for_decompression()
-	{
-		const char *file_ext[] = { ".gz", ".zip", NULL };
-
-		if(load_file(file_ext, tmp_filename, g_default_rom_dir) != -1)
-		{
-			strcpy(line_buffer, g_default_rom_dir);
-			strcat(line_buffer, "/");
-			strcat(line_buffer, tmp_filename);
-
-			DS2_FillScreen(DS_ENGINE_SUB, COLOR_BLACK);
-			DS2_UpdateScreen(DS_ENGINE_SUB);
-
-			DS2_SetScreenBacklights(DS_SCREEN_UPPER);
-
-			DS2_HighClockSpeed();
-			if (strcasecmp(&line_buffer[strlen(line_buffer) - 3 /* .gz */], ".gz") == 0)
-				while (!GzipUncompress(line_buffer)); // retry if needed
-			else if (strcasecmp(&line_buffer[strlen(line_buffer) - 4 /* .zip */], ".zip") == 0)
-				while (!ZipUncompress(line_buffer)); // retry if needed
-			DS2_LowClockSpeed();
-
-			return_value = 1;
-			repeat = 0;
-		}
-		else
-		{
-			choose_menu(current_menu);
+static void DefaultDown(struct Menu** ActiveMenu, uint32_t* ActiveEntryIndex)
+{
+	if (MoveDown(*ActiveMenu, ActiveEntryIndex)) {
+		// Keep moving up until a menu entry can be focused.
+		uint32_t Sentinel = *ActiveEntryIndex;
+		EntryCanFocusFunction CanFocus = (*ActiveMenu)->Entries[*ActiveEntryIndex]->CanFocus;
+		if (CanFocus == NULL) CanFocus = DefaultCanFocus;
+		while (!CanFocus(*ActiveMenu, (*ActiveMenu)->Entries[*ActiveEntryIndex], *ActiveEntryIndex)) {
+			MoveDown(*ActiveMenu, ActiveEntryIndex);
+			if (*ActiveEntryIndex == Sentinel) {
+				// If we went through all of them, we cannot focus anything.
+				// Place the focus on the NULL entry.
+				*ActiveEntryIndex = FindNullEntry(*ActiveMenu);
+				return;
+			}
+			CanFocus = (*ActiveMenu)->Entries[*ActiveEntryIndex]->CanFocus;
+			if (CanFocus == NULL) CanFocus = DefaultCanFocus;
 		}
 	}
+}
 
-    void load_default_setting()
-    {
-        if(bg_screenp != NULL)
-        {
-            bg_screenp_color = COLOR_BG;
-            memcpy(bg_screenp, DS2_GetSubScreen(), 256*192*2);
-        }
-        else
-            bg_screenp_color = COLOR_BG;
+static void DefaultRight(struct Menu* ActiveMenu, struct Entry* ActiveEntry)
+{
+	if (ActiveEntry->Kind == KIND_OPTION
+	|| (ActiveEntry->Kind == KIND_CUSTOM && ActiveEntry->Right == &DefaultRight /* chose to use this function */
+	 && ActiveEntry->Target != NULL)) {
+		uint32_t* Target = (uint32_t*) ActiveEntry->Target;
+		(*Target)++;
+		if (*Target >= ActiveEntry->ChoiceCount)
+			*Target = 0;
 
-        draw_message_box(DS2_GetSubScreen());
-        draw_string_vcenter(DS2_GetSubScreen(), MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, msg[MSG_DIALOG_RESET]);
+		ActionFunction Action = ActiveEntry->Action;
+		if (Action != NULL)
+			Action();
+	}
+}
 
-        if(draw_yesno_dialog(DS_ENGINE_SUB, msg[MSG_GENERAL_CONFIRM_WITH_A], msg[MSG_GENERAL_CANCEL_WITH_B]))
-        {
+static void DefaultLeft(struct Menu* ActiveMenu, struct Entry* ActiveEntry)
+{
+	if (ActiveEntry->Kind == KIND_OPTION
+	|| (ActiveEntry->Kind == KIND_CUSTOM && ActiveEntry->Left == &DefaultLeft /* chose to use this function */
+	 && ActiveEntry->Target != NULL)) {
+		uint32_t* Target = (uint32_t*) ActiveEntry->Target;
+		if (*Target == 0)
+			*Target = ActiveEntry->ChoiceCount;
+		(*Target)--;
+
+		ActionFunction Action = ActiveEntry->Action;
+		if (Action != NULL)
+			Action();
+	}
+}
+
+static void DefaultEnter(struct Menu** ActiveMenu, uint32_t* ActiveEntryIndex)
+{
+	if ((*ActiveMenu)->Entries[*ActiveEntryIndex]->Kind == KIND_SUBMENU) {
+		*ActiveMenu = (struct Menu*) (*ActiveMenu)->Entries[*ActiveEntryIndex]->Target;
+	} else if ((*ActiveMenu)->Entries[*ActiveEntryIndex]->Kind == KIND_ACTION) {
+		ActionFunction Action = (*ActiveMenu)->Entries[*ActiveEntryIndex]->Action;
+		if (Action != NULL) Action();
+	}
+}
+
+static void DefaultLeave(struct Menu** ActiveMenu, uint32_t* ActiveEntryIndex)
+{
+	*ActiveMenu = (*ActiveMenu)->Parent;
+}
+
+static void DefaultTouchBounds(struct Menu* ActiveMenu, struct Entry* ActiveEntry, uint32_t Position, struct TouchBounds* Bounds)
+{
+	*Bounds = (struct TouchBounds) {
+		.X1 = 0, .Y1 = GUI_ROW1_Y + (Position - 1) * GUI_ROW_SY,
+		.X2 = 256, .Y2 = GUI_ROW1_Y + Position * GUI_ROW_SY
+	};
+}
+
+static void DefaultTouch(struct Menu** ActiveMenu, uint32_t* ActiveEntryIndex, uint32_t X, uint32_t Y)
+{
+	if ((*ActiveMenu)->Entries[*ActiveEntryIndex]->Kind == KIND_SUBMENU) {
+		ModifyFunction Enter = (*ActiveMenu)->Entries[*ActiveEntryIndex]->Enter;
+		if (Enter == NULL) Enter = DefaultEnter;
+		Enter(ActiveMenu, ActiveEntryIndex);
+	} else if ((*ActiveMenu)->Entries[*ActiveEntryIndex]->Kind == KIND_ACTION) {
+		ActionFunction Action = (*ActiveMenu)->Entries[*ActiveEntryIndex]->Action;
+		if (Action != NULL)
+			Action();
+	} else if ((*ActiveMenu)->Entries[*ActiveEntryIndex]->Kind == KIND_OPTION) {
+		EntryFunction Right = (*ActiveMenu)->Entries[*ActiveEntryIndex]->Right;
+		if (Right == NULL) Right = DefaultRight;
+		Right(*ActiveMenu, (*ActiveMenu)->Entries[*ActiveEntryIndex]);
+	}
+}
+
+static void DefaultInputDispatch(struct Menu** ActiveMenu, uint32_t* ActiveEntryIndex)
+{
+	gui_action_type gui_action = get_gui_input();
+	
+	switch (gui_action) {
+	case CURSOR_SELECT:
+		if ((*ActiveMenu)->Entries[*ActiveEntryIndex] != NULL) {
+			ModifyFunction Enter = (*ActiveMenu)->Entries[*ActiveEntryIndex]->Enter;
+			if (Enter == NULL) Enter = DefaultEnter;
+			Enter(ActiveMenu, ActiveEntryIndex);
+			break;
+		}
+		// otherwise, no entry has the focus, so SELECT acts like BACK
+		// (fall through)
+
+	case CURSOR_BACK:
+	{
+		ModifyFunction Leave = (*ActiveMenu)->Leave;
+		if (Leave == NULL) Leave = DefaultLeave;
+		Leave(ActiveMenu, ActiveEntryIndex);
+		break;
+	}
+
+	case CURSOR_UP:
+	{
+		ModifyFunction Up = (*ActiveMenu)->Up;
+		if (Up == NULL) Up = DefaultUp;
+		Up(ActiveMenu, ActiveEntryIndex);
+		break;
+	}
+
+	case CURSOR_DOWN:
+	{
+		ModifyFunction Down = (*ActiveMenu)->Down;
+		if (Down == NULL) Down = DefaultDown;
+		Down(ActiveMenu, ActiveEntryIndex);
+		break;
+	}
+
+	case CURSOR_LEFT:
+		if ((*ActiveMenu)->Entries[*ActiveEntryIndex] != NULL) {
+			EntryFunction Left = (*ActiveMenu)->Entries[*ActiveEntryIndex]->Left;
+			if (Left == NULL) Left = DefaultLeft;
+			Left(*ActiveMenu, (*ActiveMenu)->Entries[*ActiveEntryIndex]);
+		}
+		break;
+
+	case CURSOR_RIGHT:
+		if ((*ActiveMenu)->Entries[*ActiveEntryIndex] != NULL) {
+			EntryFunction Right = (*ActiveMenu)->Entries[*ActiveEntryIndex]->Right;
+			if (Right == NULL) Right = DefaultRight;
+			Right(*ActiveMenu, (*ActiveMenu)->Entries[*ActiveEntryIndex]);
+		}
+		break;
+
+	case CURSOR_TOUCH:
+	{
+		struct DS_InputState inputdata;
+		uint32_t EntryIndex = 0;
+		struct Entry* Entry = (*ActiveMenu)->Entries[0];
+		struct TouchBounds Bounds;
+
+		DS2_GetInputState(&inputdata);
+
+		for (; Entry != NULL; EntryIndex++, Entry = (*ActiveMenu)->Entries[EntryIndex]) {
+			EntryCanFocusFunction CanFocus = (*ActiveMenu)->Entries[EntryIndex]->CanFocus;
+			if (CanFocus == NULL) CanFocus = DefaultCanFocus;
+			if (!CanFocus(*ActiveMenu, Entry, EntryIndex))
+				continue;
+
+			EntryTouchBoundsFunction TouchBounds = (*ActiveMenu)->Entries[EntryIndex]->TouchBounds;
+			if (TouchBounds == NULL) TouchBounds = DefaultTouchBounds;
+			TouchBounds(*ActiveMenu, Entry, EntryIndex, &Bounds);
+
+			if (inputdata.touch_x >= Bounds.X1 && inputdata.touch_x < Bounds.X2
+			 && inputdata.touch_y >= Bounds.Y1 && inputdata.touch_y < Bounds.Y2) {
+				*ActiveEntryIndex = EntryIndex;
+
+				EntryTouchFunction Touch = (*ActiveMenu)->Entries[EntryIndex]->Touch;
+				if (Touch == NULL) Touch = DefaultTouch;
+				Touch(ActiveMenu, ActiveEntryIndex, inputdata.touch_x, inputdata.touch_y);
+				break;
+			}
+		}
+
+		break;
+	}
+
+	default:
+		break;
+	}
+}
+
+static void DefaultDisplayName(struct Entry* DrawnEntry, struct Entry* ActiveEntry, uint32_t Position)
+{
+	bool IsActive = (DrawnEntry == ActiveEntry);
+	uint16_t TextColor = IsActive ? COLOR_ACTIVE_ITEM : COLOR_INACTIVE_ITEM;
+	if (IsActive) {
+		show_icon(DS2_GetSubScreen(), &ICON_SUBSELA, SUBSELA_X, GUI_ROW1_Y + (Position - 1) * GUI_ROW_SY + SUBSELA_OFFSET_Y);
+	}
+	PRINT_STRING_BG(DS2_GetSubScreen(), *DrawnEntry->Name, TextColor, COLOR_TRANS, OPTION_TEXT_X, GUI_ROW1_Y + (Position - 1) * GUI_ROW_SY + TEXT_OFFSET_Y);
+}
+
+static void DefaultDisplayValue(struct Entry* DrawnEntry, struct Entry* ActiveEntry, uint32_t Position)
+{
+	if (DrawnEntry->Kind == KIND_OPTION || DrawnEntry->Kind == KIND_DISPLAY) {
+		char Temp[21];
+		Temp[0] = '\0';
+		const char* Value = Temp;
+		bool Error = false;
+		if (DrawnEntry->Kind == KIND_OPTION) {
+			if (*(uint32_t*) DrawnEntry->Target < DrawnEntry->ChoiceCount)
+				Value = *DrawnEntry->Choices[*(uint32_t*) DrawnEntry->Target];
+			else {
+				Value = "Out of bounds";
+				Error = true;
+			}
+		} else if (DrawnEntry->Kind == KIND_DISPLAY) {
+			switch (DrawnEntry->DisplayType) {
+				case TYPE_STRING:
+					Value = (const char*) DrawnEntry->Target;
+					break;
+				case TYPE_INT32:
+					sprintf(Temp, "%" PRIi32, *(int32_t*) DrawnEntry->Target);
+					break;
+				case TYPE_UINT32:
+					sprintf(Temp, "%" PRIu32, *(uint32_t*) DrawnEntry->Target);
+					break;
+				case TYPE_INT64:
+					sprintf(Temp, "%" PRIi64, *(int64_t*) DrawnEntry->Target);
+					break;
+				case TYPE_UINT64:
+					sprintf(Temp, "%" PRIu64, *(uint64_t*) DrawnEntry->Target);
+					break;
+				default:
+					Value = "Unknown type";
+					Error = true;
+					break;
+			}
+		}
+		bool IsActive = (DrawnEntry == ActiveEntry);
+		uint16_t TextColor = Error ? BGR555(0, 0, 31) : (IsActive ? COLOR_ACTIVE_ITEM : COLOR_INACTIVE_ITEM);
+		uint32_t TextWidth = BDF_WidthUTF8s(Value);
+		PRINT_STRING_BG(DS2_GetSubScreen(), Value, TextColor, COLOR_TRANS, DS_SCREEN_WIDTH - OPTION_TEXT_X - TextWidth, GUI_ROW1_Y + (Position - 1) * GUI_ROW_SY + TEXT_OFFSET_Y);
+	}
+}
+
+static void DefaultDisplayBackground(struct Menu* ActiveMenu)
+{
+	show_icon(DS2_GetSubScreen(), &ICON_SUBBG, 0, 0);
+}
+
+static void DefaultDisplayData(struct Menu* ActiveMenu, struct Entry* ActiveEntry)
+{
+	uint32_t DrawnEntryIndex = 0;
+	struct Entry* DrawnEntry = ActiveMenu->Entries[0];
+	for (; DrawnEntry != NULL; DrawnEntryIndex++, DrawnEntry = ActiveMenu->Entries[DrawnEntryIndex]) {
+		EntryDisplayFunction Function = DrawnEntry->DisplayName;
+		if (Function == NULL) Function = &DefaultDisplayName;
+		Function(DrawnEntry, ActiveEntry, DrawnEntryIndex);
+
+		Function = DrawnEntry->DisplayValue;
+		if (Function == NULL) Function = &DefaultDisplayValue;
+		Function(DrawnEntry, ActiveEntry, DrawnEntryIndex);
+	}
+}
+
+static void DefaultDisplayTitle(struct Menu* ActiveMenu)
+{
+	show_icon(DS2_GetSubScreen(), &ICON_TITLE, 0, 0);
+	show_icon(DS2_GetSubScreen(), &ICON_TITLEICON, TITLE_ICON_X, TITLE_ICON_Y);
+
+	draw_string_vcenter(DS2_GetSubScreen(), 0, 9, 256, COLOR_ACTIVE_ITEM, *ActiveMenu->Title);
+}
+
+// -- Shorthand for creating menu entries --
+
+#define ENTRY_OPTION(_Name, _Target, _ChoiceCount) \
+	.Kind = KIND_OPTION, .Name = _Name, .Target = _Target, .ChoiceCount = _ChoiceCount
+
+#define ENTRY_DISPLAY(_Name, _Target, _DisplayType) \
+	.Kind = KIND_DISPLAY, .Name = _Name, .Target = _Target, .DisplayType = _DisplayType
+
+#define ENTRY_SUBMENU(_Name, _Target) \
+	.Kind = KIND_SUBMENU, .Name = _Name, .Target = _Target
+
+// -- Custom actions --
+
+static void DisplayBack(struct Entry* DrawnEntry, struct Entry* ActiveEntry, uint32_t Position)
+{
+	if (DrawnEntry == ActiveEntry) {
+		show_icon(DS2_GetSubScreen(), &ICON_BACK, BACK_BUTTON_X, BACK_BUTTON_Y);
+	} else {
+		show_icon(DS2_GetSubScreen(), &ICON_NBACK, BACK_BUTTON_X, BACK_BUTTON_Y);
+	}
+}
+
+/* This function can be used to redirect any Entry's Touch function to its
+ * Enter function. */
+static void TouchEnter(struct Menu** ActiveMenu, uint32_t* ActiveEntryIndex, uint32_t X, uint32_t Y)
+{
+	ModifyFunction Enter = (*ActiveMenu)->Entries[*ActiveEntryIndex]->Enter;
+	if (Enter == NULL) Enter = DefaultEnter;
+	Enter(ActiveMenu, ActiveEntryIndex);
+}
+
+static void TouchBoundsBack(struct Menu* ActiveMenu, struct Entry* ActiveEntry, uint32_t Position, struct TouchBounds* Bounds)
+{
+	*Bounds = (struct TouchBounds) {
+		.X1 = BACK_BUTTON_TOUCH_X, .Y1 = 0,
+		.X2 = DS_SCREEN_WIDTH, .Y2 = BACK_BUTTON_TOUCH_Y
+	};
+}
+
+static struct Entry Back = {
+	.Kind = KIND_CUSTOM,
+	.DisplayName = DisplayBack,
+	.Enter = DefaultLeave, .Touch = TouchEnter,
+	.TouchBounds = TouchBoundsBack
+};
+
+/* --- MAIN MENU --- */
+
+extern struct Menu MainMenu;
+
+extern struct Menu AudioVideo;
+extern struct Menu SavedStates;
+extern struct Menu Tools;
+extern struct Menu Options;
+extern struct Menu NewGame;
+
+static void DisplayBackgroundMainMenu(struct Menu* ActiveMenu)
+{
+	show_icon(DS2_GetSubScreen(), &ICON_MAINBG, 0, 0);
+}
+
+static void DisplayTitleMainMenu(struct Menu* ActiveMenu)
+{
+}
+
+static void InputDispatchMainMenu(struct Menu** ActiveMenu, uint32_t* ActiveEntryIndex)
+{
+	gui_action_type gui_action = get_gui_input();
+	
+	switch (gui_action) {
+	case CURSOR_SELECT:
+		if ((*ActiveMenu)->Entries[*ActiveEntryIndex] != NULL) {
+			ModifyFunction Enter = (*ActiveMenu)->Entries[*ActiveEntryIndex]->Enter;
+			if (Enter == NULL) Enter = DefaultEnter;
+			Enter(ActiveMenu, ActiveEntryIndex);
+			break;
+		}
+		// otherwise, no entry has the focus, so SELECT acts like BACK
+		// (fall through)
+
+	case CURSOR_BACK:
+	{
+		ModifyFunction Leave = (*ActiveMenu)->Leave;
+		if (Leave == NULL) Leave = DefaultLeave;
+		Leave(ActiveMenu, ActiveEntryIndex);
+		break;
+	}
+
+	case CURSOR_UP:
+	case CURSOR_DOWN:
+		*ActiveEntryIndex ^= 2;
+		break;
+
+	case CURSOR_LEFT:
+	case CURSOR_RIGHT:
+		*ActiveEntryIndex ^= 1;
+		break;
+
+	case CURSOR_TOUCH:
+	{
+		struct DS_InputState inputdata;
+		uint32_t EntryIndex;
+		struct Entry* Entry;
+
+		DS2_GetInputState(&inputdata);
+
+		EntryIndex = inputdata.touch_x / 128 + (inputdata.touch_y / 96) * 2;
+
+		Entry = (*ActiveMenu)->Entries[EntryIndex];
+
+		EntryCanFocusFunction CanFocus = Entry->CanFocus;
+		if (CanFocus == NULL) CanFocus = DefaultCanFocus;
+		if (!CanFocus(*ActiveMenu, Entry, EntryIndex))
+			break;
+
+		*ActiveEntryIndex = EntryIndex;
+
+		EntryTouchFunction Touch = Entry->Touch;
+		if (Touch == NULL) Touch = DefaultTouch;
+		Touch(ActiveMenu, ActiveEntryIndex, inputdata.touch_x, inputdata.touch_y);
+
+		break;
+	}
+
+	default:
+		break;
+	}
+}
+
+static void DisplayCompress(struct Entry* DrawnEntry, struct Entry* ActiveEntry, uint32_t Position)
+{
+	bool IsActive = (DrawnEntry == ActiveEntry);
+	uint16_t TextColor = IsActive ? COLOR_ACTIVE_MAIN : COLOR_INACTIVE_MAIN;
+	show_icon(DS2_GetSubScreen(), IsActive ? &ICON_COMPRESS : &ICON_NCOMPRESS, 0, 0);
+	show_icon(DS2_GetSubScreen(), IsActive ? &ICON_MSEL : &ICON_MNSEL, 24, 81);
+	draw_string_vcenter(DS2_GetSubScreen(), 26, 81, 75, TextColor, *DrawnEntry->Name);
+}
+
+static void DisplayDecompress(struct Entry* DrawnEntry, struct Entry* ActiveEntry, uint32_t Position)
+{
+	bool IsActive = (DrawnEntry == ActiveEntry);
+	uint16_t TextColor = IsActive ? COLOR_ACTIVE_MAIN : COLOR_INACTIVE_MAIN;
+	show_icon(DS2_GetSubScreen(), IsActive ? &ICON_DECOMPRESS : &ICON_NDECOMPRESS, 128, 0);
+	show_icon(DS2_GetSubScreen(), IsActive ? &ICON_MSEL : &ICON_MNSEL, 152, 81);
+	draw_string_vcenter(DS2_GetSubScreen(), 154, 81, 75, TextColor, *DrawnEntry->Name);
+}
+
+static void DisplayOptions(struct Entry* DrawnEntry, struct Entry* ActiveEntry, uint32_t Position)
+{
+	bool IsActive = (DrawnEntry == ActiveEntry);
+	uint16_t TextColor = IsActive ? COLOR_ACTIVE_MAIN : COLOR_INACTIVE_MAIN;
+	show_icon(DS2_GetSubScreen(), IsActive ? &ICON_OPTIONS : &ICON_NOPTIONS, 0, 96);
+	show_icon(DS2_GetSubScreen(), IsActive ? &ICON_MSEL : &ICON_MNSEL, 24, 177);
+	draw_string_vcenter(DS2_GetSubScreen(), 26, 177, 75, TextColor, *DrawnEntry->Name);
+}
+
+static void ActionExit(struct Menu** ActiveMenu, uint32_t* ActiveEntryIndex)
+{
+	// Please ensure that the Main Menu itself does not have entries of type
+	// KIND_OPTION. The on-demand writing of settings to storage will not
+	// occur after quit(), since it acts after the action function returns.
+	DS2_HighClockSpeed();
+	quit();
+	*ActiveMenu = NULL;
+}
+
+static void DisplayExit(struct Entry* DrawnEntry, struct Entry* ActiveEntry, uint32_t Position)
+{
+	bool IsActive = (DrawnEntry == ActiveEntry);
+	uint16_t TextColor = IsActive ? COLOR_ACTIVE_MAIN : COLOR_INACTIVE_MAIN;
+	show_icon(DS2_GetSubScreen(), IsActive ? &ICON_EXIT : &ICON_NEXIT, 128, 96);
+	show_icon(DS2_GetSubScreen(), IsActive ? &ICON_MSEL : &ICON_MNSEL, 152, 177);
+	draw_string_vcenter(DS2_GetSubScreen(), 154, 177, 75, TextColor, *DrawnEntry->Name);
+}
+
+void ActionCompress(struct Menu** ActiveMenu, uint32_t* ActiveEntryIndex)
+{
+	const char *file_ext[] = { NULL }; // Show all files
+	char line_buffer[PATH_MAX], tmp_filename[PATH_MAX];
+
+	if (load_file(file_ext, tmp_filename, g_default_rom_dir) != -1) {
+		strcpy(line_buffer, g_default_rom_dir);
+		strcat(line_buffer, "/");
+		strcat(line_buffer, tmp_filename);
+
+		DS2_FillScreen(DS_ENGINE_SUB, COLOR_BLACK);
+		DS2_UpdateScreen(DS_ENGINE_SUB);
+
+		DS2_SetScreenBacklights(DS_SCREEN_UPPER);
+
+		DS2_HighClockSpeed();
+		uint32_t level = application_config.CompressionLevel;
+		if (level == 0)
+			level = 1;
+		else if (level > 9)
+			level = 9;
+		while (!GzipCompress(line_buffer, level)); // retry if needed
+
+		DS2_LowClockSpeed();
+		*ActiveMenu = NULL;
+	}
+}
+
+void ActionDecompress(struct Menu** ActiveMenu, uint32_t* ActiveEntryIndex)
+{
+	const char *file_ext[] = { ".gz", ".zip", NULL };
+	char line_buffer[PATH_MAX], tmp_filename[PATH_MAX];
+
+	if (load_file(file_ext, tmp_filename, g_default_rom_dir) != -1) {
+		strcpy(line_buffer, g_default_rom_dir);
+		strcat(line_buffer, "/");
+		strcat(line_buffer, tmp_filename);
+
+		DS2_FillScreen(DS_ENGINE_SUB, COLOR_BLACK);
+		DS2_UpdateScreen(DS_ENGINE_SUB);
+
+		DS2_SetScreenBacklights(DS_SCREEN_UPPER);
+
+		DS2_HighClockSpeed();
+		if (strcasecmp(&line_buffer[strlen(line_buffer) - 3 /* .gz */], ".gz") == 0)
+			while (!GzipUncompress(line_buffer)); // retry if needed
+		else if (strcasecmp(&line_buffer[strlen(line_buffer) - 4 /* .zip */], ".zip") == 0)
+			while (!ZipUncompress(line_buffer)); // retry if needed
+
+		DS2_LowClockSpeed();
+		*ActiveMenu = NULL;
+	}
+}
+
+static struct Entry MainMenu_Compress = {
+	.Kind = KIND_CUSTOM, .Name = &msg[MSG_MAIN_MENU_COMPRESS],
+	.DisplayName = DisplayCompress,
+	.Enter = ActionCompress, .Touch = TouchEnter
+};
+
+static struct Entry MainMenu_Decompress = {
+	.Kind = KIND_CUSTOM, .Name = &msg[MSG_MAIN_MENU_DECOMPRESS],
+	.DisplayName = DisplayDecompress,
+	.Enter = ActionDecompress, .Touch = TouchEnter
+};
+
+static struct Entry MainMenu_Options = {
+	ENTRY_SUBMENU(&msg[MSG_MAIN_MENU_OPTIONS], &Options),
+	.DisplayName = DisplayOptions
+};
+
+static struct Entry MainMenu_Exit = {
+	.Kind = KIND_CUSTOM, .Name = &msg[MSG_MAIN_MENU_EXIT],
+	.Enter = ActionExit, .Touch = TouchEnter,
+	.DisplayName = DisplayExit
+};
+
+struct Menu MainMenu = {
+	.Parent = NULL, .Title = NULL,
+	.DisplayBackground = DisplayBackgroundMainMenu, .DisplayTitle = DisplayTitleMainMenu,
+	.InputDispatch = InputDispatchMainMenu,
+	.Leave = ActionExit,
+	.Entries = { &MainMenu_Compress, &MainMenu_Decompress, &MainMenu_Options, &MainMenu_Exit, NULL },
+	.ActiveEntryIndex = 0  /* Start out at Compress */
+};
+
+/* --- Main Menu > OPTIONS --- */
+
+static void DisplayLanguageValue(struct Entry* DrawnEntry, struct Entry* ActiveEntry, uint32_t Position)
+{
+	char Temp[21];
+	Temp[0] = '\0';
+	const char* Value = Temp;
+	bool Error = false;
+
+	if (*(uint32_t*) DrawnEntry->Target < DrawnEntry->ChoiceCount)
+		Value = lang[*(uint32_t*) DrawnEntry->Target];
+	else {
+		Value = "Out of bounds";
+		Error = true;
+	}
+
+	bool IsActive = (DrawnEntry == ActiveEntry);
+	uint16_t TextColor = Error ? BGR555(0, 0, 31) : (IsActive ? COLOR_ACTIVE_ITEM : COLOR_INACTIVE_ITEM);
+	uint32_t TextWidth = BDF_WidthUTF8s(Value);
+	PRINT_STRING_BG(DS2_GetSubScreen(), Value, TextColor, COLOR_TRANS, DS_SCREEN_WIDTH - OPTION_TEXT_X - TextWidth, GUI_ROW1_Y + (Position - 1) * GUI_ROW_SY + TEXT_OFFSET_Y);
+}
+
+static void DisplayCompressionLevelValue(struct Entry* DrawnEntry, struct Entry* ActiveEntry, uint32_t Position)
+{
+	char Temp[21];
+	Temp[0] = '\0';
+	const char* Value = Temp;
+	bool Error = false;
+
+	if (*(uint32_t*) DrawnEntry->Target < DrawnEntry->ChoiceCount)
+		sprintf(Temp, "%" PRIu32, *(uint32_t*) DrawnEntry->Target);
+	else {
+		Value = "Out of bounds";
+		Error = true;
+	}
+
+	bool IsActive = (DrawnEntry == ActiveEntry);
+	uint16_t TextColor = Error ? BGR555(0, 0, 31) : (IsActive ? COLOR_ACTIVE_ITEM : COLOR_INACTIVE_ITEM);
+	uint32_t TextWidth = BDF_WidthUTF8s(Value);
+	PRINT_STRING_BG(DS2_GetSubScreen(), Value, TextColor, COLOR_TRANS, DS_SCREEN_WIDTH - OPTION_TEXT_X - TextWidth, GUI_ROW1_Y + (Position - 1) * GUI_ROW_SY + TEXT_OFFSET_Y);
+}
+
+void PostChangeLanguage()
+{
+	DS2_HighClockSpeed(); // crank it up
+
+	load_language_msg(LANGUAGE_PACK, application_config.language);
+
+	DS2_LowClockSpeed(); // and back down
+}
+
+void LoadDefaults()
+{
+	draw_message_box(DS2_GetSubScreen());
+	draw_string_vcenter(DS2_GetSubScreen(), MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, msg[MSG_DIALOG_RESET]);
+
+	if (draw_yesno_dialog(DS_ENGINE_SUB, msg[MSG_GENERAL_CONFIRM_WITH_A], msg[MSG_GENERAL_CANCEL_WITH_B])) {
+		char file[PATH_MAX];
+
 		DS2_AwaitNoButtons();
-            draw_message_box(DS2_GetSubScreen());
-            draw_string_vcenter(DS2_GetSubScreen(), MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, msg[MSG_PROGRESS_RESETTING]);
-            DS2_UpdateScreen(DS_ENGINE_SUB);
-            DS2_AwaitScreenUpdate(DS_ENGINE_SUB);
+		draw_message_box(DS2_GetSubScreen());
+		draw_string_vcenter(DS2_GetSubScreen(), MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, msg[MSG_PROGRESS_RESETTING]);
+		DS2_UpdateScreen(DS_ENGINE_SUB);
 
-            sprintf(line_buffer, "%s/%s", main_path, APPLICATION_CONFIG_FILENAME);
-            remove(line_buffer);
+		sprintf(file, "%s/%s", main_path, APPLICATION_CONFIG_FILENAME);
+		remove(file);
 
-            init_application_config();
-
-		DS2_FillScreen(DS_ENGINE_MAIN, COLOR_BLACK);
-		DS2_FlipMainScreen();
-        }
-    }
-
-    void check_application_version()
-    {
-        if(bg_screenp != NULL)
-        {
-            bg_screenp_color = COLOR_BG;
-            memcpy(bg_screenp, DS2_GetSubScreen(), 256*192*2);
-        }
-        else
-            bg_screenp_color = COLOR_BG;
-
-        draw_message_box(DS2_GetSubScreen());
-        sprintf(line_buffer, "%s\n%s %s", msg[MSG_APPLICATION_NAME], msg[MSG_WORD_APPLICATION_VERSION], DS2COMP_VERSION);
-        draw_string_vcenter(DS2_GetSubScreen(), MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, line_buffer);
-        DS2_UpdateScreen(DS_ENGINE_SUB);
-        DS2_AwaitScreenUpdate(DS_ENGINE_SUB);
-
-		DS2_AwaitNoButtons(); // invoked from the menu
-		DS2_AwaitAnyButtons(); // wait until the user presses something
-		DS2_AwaitNoButtons(); // don't give that button to the menu
-    }
-
-    void language_set()
-    {
-        if(gui_action == CURSOR_LEFT || gui_action == CURSOR_RIGHT)
-        {
-            DS2_HighClockSpeed(); // crank it up
-            if(bg_screenp != NULL)
-            {
-                bg_screenp_color = COLOR_BG;
-                memcpy(bg_screenp, DS2_GetSubScreen(), 256*192*2);
-            }
-            else
-                bg_screenp_color = COLOR_BG;
-
-            load_language_msg(LANGUAGE_PACK, application_config.language);
-
-            save_application_config_file();
-            DS2_LowClockSpeed(); // and back down
-        }
-    }
-
-    char *on_off_options[] = { (char*)&msg[MSG_GENERAL_OFF], (char*)&msg[MSG_GENERAL_ON] };
-
-  /*--------------------------------------------------------
-     Others
-  --------------------------------------------------------*/
-    uint32_t desert= 0;
-	MENU_OPTION_TYPE others_options[] = 
-	{
-	/* 00 */ SUBMENU_OPTION(NULL, &msg[MSG_MAIN_MENU_OPTIONS], NULL, 0),
-
-	/* 01 */ NUMERIC_SELECTION_OPTION(NULL, &msg[FMT_OPTIONS_COMPRESSION_LEVEL], &application_config.CompressionLevel, 10, NULL, 1),
-
-	/* 02 */ STRING_SELECTION_OPTION(language_set, NULL, &msg[FMT_OPTIONS_LANGUAGE], language_options, 
-        &application_config.language, sizeof(language_options) / sizeof(language_options[0]) /* number of possible languages */, NULL, ACTION_TYPE, 2),
-
-	/* 03 */ ACTION_OPTION(load_default_setting, NULL, &msg[MSG_OPTIONS_RESET], NULL, 3),
-
-	/* 04 */ ACTION_OPTION(check_application_version, NULL, &msg[MSG_OPTIONS_VERSION], NULL, 4),
-	};
-
-	MAKE_MENU(others, others_menu_init, NULL, NULL, others_menu_end, 1, 1);
-
-  /*--------------------------------------------------------
-     MAIN MENU
-  --------------------------------------------------------*/
-	MENU_OPTION_TYPE main_options[] =
-	{
-
-    /* 00 */ ACTION_OPTION(menu_load_for_compression, NULL, &msg[MSG_MAIN_MENU_COMPRESS], NULL, 0),
-
-    /* 01 */ ACTION_OPTION(menu_load_for_decompression, NULL, &msg[MSG_MAIN_MENU_DECOMPRESS], NULL, 1),
-
-    /* 02 */ SUBMENU_OPTION(&others_menu, &msg[MSG_MAIN_MENU_OPTIONS], NULL, 2),
-
-    /* 03 */ ACTION_OPTION(menu_exit, NULL, &msg[MSG_MAIN_MENU_EXIT], NULL, 3),
-	};
-
-	MAKE_MENU(main, NULL, main_menu_passive, main_menu_key, NULL, 0 /* active item upon initialisation */, 0);
-
-	void main_menu_passive()
-	{
-		show_icon(DS2_GetSubScreen(), &ICON_MAINBG, 0, 0);
-		current_menu -> focus_option = current_option -> line_number;
-
-		// Compress
-		strcpy(line_buffer, *(display_option->display_string));
-		if(display_option++ == current_option) {
-			show_icon(DS2_GetSubScreen(), &ICON_COMPRESS, 0, 0);
-			show_icon(DS2_GetSubScreen(), &ICON_MSEL, 24, 81);
-		}
-		else {
-			show_icon(DS2_GetSubScreen(), &ICON_NCOMPRESS, 0, 0);
-			show_icon(DS2_GetSubScreen(), &ICON_MNSEL, 24, 81);
-		}
-		draw_string_vcenter(DS2_GetSubScreen(), 26, 81, 75, COLOR_WHITE, line_buffer);
-
-		// Decompress
-		strcpy(line_buffer, *(display_option->display_string));
-		if(display_option++ == current_option) {
-			show_icon(DS2_GetSubScreen(), &ICON_DECOMPRESS, 128, 0);
-			show_icon(DS2_GetSubScreen(), &ICON_MSEL, 152, 81);
-		}
-		else {
-			show_icon(DS2_GetSubScreen(), &ICON_NDECOMPRESS, 128, 0);
-			show_icon(DS2_GetSubScreen(), &ICON_MNSEL, 152, 81);
-		}
-		draw_string_vcenter(DS2_GetSubScreen(), 154, 81, 75, COLOR_WHITE, line_buffer);
-
-		// Options
-		strcpy(line_buffer, *(display_option->display_string));
-		if(display_option++ == current_option) {
-			show_icon(DS2_GetSubScreen(), &ICON_OPTIONS, 0, 96);
-			show_icon(DS2_GetSubScreen(), &ICON_MSEL, 24, 177);
-		}
-		else {
-			show_icon(DS2_GetSubScreen(), &ICON_NOPTIONS, 0, 96);
-			show_icon(DS2_GetSubScreen(), &ICON_MNSEL, 24, 177);
-		}
-		draw_string_vcenter(DS2_GetSubScreen(), 26, 177, 75, COLOR_WHITE, line_buffer);
-
-		// Exit
-		strcpy(line_buffer, *(display_option->display_string));
-		if(display_option++ == current_option) {
-			show_icon(DS2_GetSubScreen(), &ICON_EXIT, 128, 96);
-			show_icon(DS2_GetSubScreen(), &ICON_MSEL, 152, 177);
-		}
-		else {
-			show_icon(DS2_GetSubScreen(), &ICON_NEXIT, 128, 96);
-			show_icon(DS2_GetSubScreen(), &ICON_MNSEL, 152, 177);
-		}
-		draw_string_vcenter(DS2_GetSubScreen(), 154, 177, 75, COLOR_WHITE, line_buffer);
+		init_application_config();
+		PostChangeLanguage();
+	} else {
+		DS2_AwaitNoButtons();
 	}
+}
 
-    void main_menu_key()
-    {
-        switch(gui_action)
-        {
-            case CURSOR_DOWN:
-				if(current_option_num < 2)	current_option_num += 2;
-				else current_option_num -= 2;
+void ShowVersion()
+{
+	char line_buffer[512];
 
-                current_option = current_menu->options + current_option_num;
-              break;
+	draw_message_box(DS2_GetSubScreen());
+	sprintf(line_buffer, "%s\n%s %s", msg[MSG_APPLICATION_NAME], msg[MSG_WORD_APPLICATION_VERSION], DS2COMP_VERSION);
+	draw_string_vcenter(DS2_GetSubScreen(), MESSAGE_BOX_TEXT_X, MESSAGE_BOX_TEXT_Y, MESSAGE_BOX_TEXT_SX, COLOR_MSSG, line_buffer);
+	DS2_UpdateScreen(DS_ENGINE_SUB);
 
-            case CURSOR_UP:
-				if(current_option_num < 2)	current_option_num += 2;
-				else current_option_num -= 2;
+	DS2_AwaitNoButtons(); // invoked from the menu
+	DS2_AwaitAnyButtons(); // wait until the user presses something
+	DS2_AwaitNoButtons(); // don't give that button to the menu
+}
 
-                current_option = current_menu->options + current_option_num;
-              break;
+static struct Entry Options_Language = {
+	ENTRY_OPTION(&msg[FMT_OPTIONS_LANGUAGE], &application_config.language, LANG_END),
+	.DisplayValue = DisplayLanguageValue,
+	.Action = PostChangeLanguage
+};
 
-            case CURSOR_RIGHT:
-				if(current_option_num == 1)	current_option_num -= 1;
-				else if(current_option_num == 3)	current_option_num -= 1;
-				else current_option_num += 1;
+static struct Entry Options_CompressionLevel = {
+	ENTRY_OPTION(&msg[FMT_OPTIONS_COMPRESSION_LEVEL], &application_config.CompressionLevel, 10),
+	.DisplayValue = DisplayCompressionLevelValue
+};
 
-                current_option = main_menu.options + current_option_num;
-              break;
+static struct Entry Options_Reset = {
+	.Kind = KIND_CUSTOM, .Name = &msg[MSG_OPTIONS_RESET],
+	.Enter = LoadDefaults, .Touch = TouchEnter
+};
 
-            case CURSOR_LEFT:
-				if(current_option_num == 0)	current_option_num += 1;
-				else if(current_option_num == 2)	current_option_num += 1;
-				else current_option_num -= 1;
+static struct Entry Options_Version = {
+	.Kind = KIND_CUSTOM, .Name = &msg[MSG_OPTIONS_VERSION],
+	.Enter = ShowVersion, .Touch = TouchEnter
+};
 
-                current_option = main_menu.options + current_option_num;
-              break;
+struct Menu Options = {
+	.Parent = &MainMenu, .Title = &msg[MSG_MAIN_MENU_OPTIONS],
+	.Entries = { &Back, &Options_Language, &Options_CompressionLevel, &Options_Reset, &Options_Version, NULL },
+	.ActiveEntryIndex = 1  /* Start out after Back */
+};
 
-            default:
-              break;
-        }// end swith
-    }
+void PreserveConfigs(APPLICATION_CONFIG* Config)
+{
+	memcpy(Config, &application_config, sizeof(APPLICATION_CONFIG));
+}
 
-	void tools_menu_init()
-	{
-	}
-
-    void others_menu_init()
-    {
-    }
-
-	void others_menu_end()
-	{
+void SaveConfigsIfNeeded(APPLICATION_CONFIG* Config)
+{
+	if (memcmp(Config, &application_config, sizeof(APPLICATION_CONFIG)) != 0) {
 		save_application_config_file();
+		memcpy(Config, &application_config, sizeof(APPLICATION_CONFIG));
 	}
+}
 
-	void choose_menu(MENU_TYPE *new_menu)
-	{
-		if(new_menu == NULL)
-			new_menu = &main_menu;
+uint32_t menu(void)
+{
+	// Compared with current settings to determine if they need to be saved.
+	APPLICATION_CONFIG PreviousConfig;
+	struct Menu *ActiveMenu = &MainMenu, *PreviousMenu = ActiveMenu;
 
-		if(NULL != current_menu) {
-			if(current_menu->end_function)
-				current_menu->end_function();
-			current_menu->focus_option = current_menu->screen_focus = current_option_num;
-		}
-
-		current_menu = new_menu;
-		current_option_num= current_menu -> focus_option;
-		current_option = new_menu->options + current_option_num;
-		if(current_menu->init_function)
-			current_menu->init_function();
-	}
-
-//----------------------------------------------------------------------------//
-//	Menu Start
 	DS2_FillScreen(DS_ENGINE_MAIN, COLOR_BLACK);
 	DS2_FlipMainScreen();
+	DS2_SetScreenBacklights(DS_SCREEN_LOWER);
 
 	DS2_LowClockSpeed();
-	DS2_SetScreenBacklights(DS_SCREEN_LOWER);
-	
-	DS2_AwaitNoButtonsIn(~DS_BUTTON_LID); // Allow the lid closing to go through
-	// so the user can close the lid and make it sleep after compressing
-	bg_screenp= (uint16_t*)malloc(256*192*2);
+	// Allow the lid closing to go through so the user can close the lid and
+	// make it sleep after (de)compressing
+	DS2_AwaitNoButtonsIn(~DS_BUTTON_LID);
 
-	repeat = 1;
+	PreserveConfigs(&PreviousConfig);
 
-	choose_menu(&main_menu);
+	if (MainMenu.Init != NULL) {
+		MainMenu.Init(&ActiveMenu);
+		while (PreviousMenu != ActiveMenu) {
+			if (PreviousMenu != NULL && PreviousMenu->End != NULL)
+				PreviousMenu->End(PreviousMenu);
+			PreviousMenu = ActiveMenu;
+			if (ActiveMenu != NULL && ActiveMenu->Init != NULL)
+				ActiveMenu->Init(&ActiveMenu);
+		}
+	}
 
-//	Menu loop
-	
-	while(repeat)
-	{
-		display_option = current_menu->options;
-		string_select= 0;
+	while (ActiveMenu != NULL) {
+		// Draw.
+		MenuFunction DisplayBackground = ActiveMenu->DisplayBackground;
+		if (DisplayBackground == NULL) DisplayBackground = DefaultDisplayBackground;
+		DisplayBackground(ActiveMenu);
 
-		if(current_menu -> passive_function)
-			current_menu -> passive_function();
-		else
-		{
-			uint32_t line_num, screen_focus, focus_option;
+		MenuFunction DisplayTitle = ActiveMenu->DisplayTitle;
+		if (DisplayTitle == NULL) DisplayTitle = DefaultDisplayTitle;
+		DisplayTitle(ActiveMenu);
 
-			//draw background
-			show_icon(DS2_GetSubScreen(), &ICON_SUBBG, 0, 0);
-			show_icon(DS2_GetSubScreen(), &ICON_TITLE, 0, 0);
-			show_icon(DS2_GetSubScreen(), &ICON_TITLEICON, TITLE_ICON_X, TITLE_ICON_Y);
-
-			strcpy(line_buffer, *(display_option->display_string));
-			draw_string_vcenter(DS2_GetSubScreen(), 0, 9, 256, COLOR_ACTIVE_ITEM, line_buffer);
-
-			line_num = current_option_num;
-			screen_focus = current_menu -> screen_focus;
-			focus_option = current_menu -> focus_option;
-
-			if(focus_option < line_num)	//focus next option
-			{
-				focus_option = line_num - focus_option;
-				screen_focus += focus_option;
-				if(screen_focus > SUBMENU_ROW_NUM)	//Reach max row numbers can display
-					screen_focus = SUBMENU_ROW_NUM;
-
-				current_menu -> screen_focus = screen_focus;
-				focus_option = line_num;
-			}
-			else if(focus_option > line_num)	//focus last option
-			{
-				focus_option = focus_option - line_num;
-				if(screen_focus > focus_option)
-					screen_focus -= focus_option;
-				else
-					screen_focus = 0;
-
-				if(screen_focus == 0 && line_num > 0)
-					screen_focus = 1;
-
-				current_menu -> screen_focus = screen_focus;
-				focus_option = line_num;
-			}
-			current_menu -> focus_option = focus_option;
-		
-			i = focus_option - screen_focus;
-			display_option += i +1;
-
-			line_num = current_menu->num_options-1;
-			if(line_num > SUBMENU_ROW_NUM)
-				line_num = SUBMENU_ROW_NUM;
-
-			if(focus_option == 0)
-				show_icon(DS2_GetSubScreen(), &ICON_BACK, BACK_BUTTON_X, BACK_BUTTON_Y);
-			else
-				show_icon(DS2_GetSubScreen(), &ICON_NBACK, BACK_BUTTON_X, BACK_BUTTON_Y);
-
-			for(i= 0; i < line_num; i++, display_option++)
-    	    {
-    	        unsigned short color;
-
-				if(display_option == current_option)
-					show_icon(DS2_GetSubScreen(), &ICON_SUBSELA, SUBSELA_X, GUI_ROW1_Y + i * GUI_ROW_SY + SUBSELA_OFFSET_Y);
-
-				if(display_option->passive_function)
-				{
-					display_option->line_number = i;
-					display_option->passive_function();
-				}
-				else if(display_option->option_type & NUMBER_SELECTION_TYPE)
-				{
-					sprintf(line_buffer, *(display_option->display_string),
-						*(display_option->current_option));
-				}
-				else if(display_option->option_type & STRING_SELECTION_TYPE)
-				{
-					sprintf(line_buffer, *(display_option->display_string),
-						*((uint32_t*)(((uint32_t *)display_option->options)[*(display_option->current_option)])));
-				}
-				else
-				{
-					strcpy(line_buffer, *(display_option->display_string));
-				}
-
-				if(display_option->passive_function == NULL)
-				{
-					if(display_option == current_option)
-						color= COLOR_ACTIVE_ITEM;
-					else
-						color= COLOR_INACTIVE_ITEM;
-	
-					PRINT_STRING_BG(DS2_GetSubScreen(), line_buffer, color, COLOR_TRANS, OPTION_TEXT_X, GUI_ROW1_Y + i * GUI_ROW_SY + TEXT_OFFSET_Y);
-				}
-    	    }
-    	}
-
-		struct DS_InputState inputdata;
-		gui_action = get_gui_input();
-
-		switch(gui_action)
-		{
-			case CURSOR_TOUCH:
-				DS2_GetInputState(&inputdata);
-				/* Back button at the top of every menu but the main one */
-				if(current_menu != &main_menu && inputdata.touch_x >= BACK_BUTTON_X && inputdata.touch_y < BACK_BUTTON_Y + ICON_BACK.y)
-				{
-					choose_menu(current_menu->options->sub_menu);
-					break;
-				}
-				/* Main menu */
-				if(current_menu == &main_menu)
-				{
-					// 0     128    256
-					//  _____ _____  0
-					// |0CMP_|1DEC_| 96
-					// |2OPT_|3EXI_| 192
-
-					current_option_num = (inputdata.touch_y / 96) * 2 + (inputdata.touch_x / 128);
-					current_option = current_menu->options + current_option_num;
-					
-					if(current_option -> option_type & HIDEN_TYPE)
-						break;
-					else if(current_option->option_type & ACTION_TYPE)
-						current_option->action_function();
-					else if(current_option->option_type & SUBMENU_TYPE)
-						choose_menu(current_option->sub_menu);
-				}
-				/* This is the majority case, covering all menus except file loading */
-				else if(current_menu != (main_menu.options + 0)->sub_menu
-				&& current_menu != (main_menu.options + 1)->sub_menu)
-				{
-					if (inputdata.touch_y <= GUI_ROW1_Y || inputdata.touch_y > GUI_ROW1_Y + GUI_ROW_SY * SUBMENU_ROW_NUM)
-						break;
-					// ___ 33        This screen has 6 possible rows. Touches
-					// ___ 60        above or below these are ignored.
-					// . . . (+27)   The row between 33 and 60 is [1], though!
-					// ___ 192
-					uint32_t next_option_num = (inputdata.touch_y - GUI_ROW1_Y) / GUI_ROW_SY + 1;
-					struct _MENU_OPTION_TYPE *next_option = current_menu->options + next_option_num;
-
-					if (next_option_num >= current_menu->num_options)
-						break;
-
-					if(!next_option)
-						break;
-
-					if(next_option -> option_type & HIDEN_TYPE)
-						break;
-
-					current_option_num = next_option_num;
-					current_option = current_menu->options + current_option_num;
-
-					if(current_menu->key_function)
-					{
-						gui_action = CURSOR_RIGHT;
-						current_menu->key_function();
-					}
-					else if(current_option->option_type & (NUMBER_SELECTION_TYPE | STRING_SELECTION_TYPE))
-					{
-						gui_action = CURSOR_RIGHT;
-						uint32_t current_option_val = *(current_option->current_option);
-
-						if(current_option_val <  current_option->num_options -1)
-							current_option_val++;
-						else
-							current_option_val= 0;
-						*(current_option->current_option) = current_option_val;
-
-						if(current_option->action_function)
-							current_option->action_function();
-					}
-					else if(current_option->option_type & ACTION_TYPE)
-						current_option->action_function();
-					else if(current_option->option_type & SUBMENU_TYPE)
-						choose_menu(current_option->sub_menu);
-				}
-				break;
-			case CURSOR_DOWN:
-				if(current_menu->key_function)
-					current_menu->key_function();
-				else
-				{
-					current_option_num = (current_option_num + 1) % current_menu->num_options;
-					current_option = current_menu->options + current_option_num;
-
-					while(current_option -> option_type & HIDEN_TYPE)
-					{
-						current_option_num = (current_option_num + 1) % current_menu->num_options;
-						current_option = current_menu->options + current_option_num;
-					}
-				}
-				break;
-
-			case CURSOR_UP:
-				if(current_menu->key_function)
-					current_menu->key_function();
-				else
-				{
-					if(current_option_num)
-						current_option_num--;
-					else
-						current_option_num = current_menu->num_options - 1;
-					current_option = current_menu->options + current_option_num;
-
-					while(current_option -> option_type & HIDEN_TYPE)
-					{
-						if(current_option_num)
-							current_option_num--;
-						else
-							current_option_num = current_menu->num_options - 1;
-						current_option = current_menu->options + current_option_num;
-					}
-				}
-				break;
-
-			case CURSOR_RIGHT:
-				if(current_menu->key_function)
-					current_menu->key_function();
-				else
-				{
-					if(current_option->option_type & (NUMBER_SELECTION_TYPE | STRING_SELECTION_TYPE))
-					{
-						uint32_t current_option_val = *(current_option->current_option);
-
-						if(current_option_val <  current_option->num_options -1)
-							current_option_val++;
-						else
-							current_option_val= 0;
-						*(current_option->current_option) = current_option_val;
-
-						if(current_option->action_function)
-							current_option->action_function();
-					}
-				}
-				break;
-
-			case CURSOR_LEFT:
-				if(current_menu->key_function)
-					current_menu->key_function();
-				else
-				{
-					if(current_option->option_type & (NUMBER_SELECTION_TYPE | STRING_SELECTION_TYPE))
-					{
-						uint32_t current_option_val = *(current_option->current_option);
-
-						if(current_option_val)
-							current_option_val--;
-						else
-							current_option_val = current_option->num_options - 1;
-						*(current_option->current_option) = current_option_val;
-
-						if(current_option->action_function)
-							current_option->action_function();
-					}
-				}
-				break;
-
-			case CURSOR_EXIT:
-				break;
-
-			case CURSOR_SELECT:
-				if(current_option->option_type & ACTION_TYPE)
-					current_option->action_function();
-				else if(current_option->option_type & SUBMENU_TYPE)
-					choose_menu(current_option->sub_menu);
-				break;
-
-			case CURSOR_BACK: 
-				if(current_menu != &main_menu)
-					choose_menu(current_menu->options->sub_menu);
-				break;
-
-			default:
-				break;
-		} // end swith
+		EntryFunction DisplayData = ActiveMenu->DisplayData;
+		if (DisplayData == NULL) DisplayData = DefaultDisplayData;
+		DisplayData(ActiveMenu, ActiveMenu->Entries[ActiveMenu->ActiveEntryIndex]);
 
 		DS2_UpdateScreen(DS_ENGINE_SUB);
 		DS2_AwaitScreenUpdate(DS_ENGINE_SUB);
-	} // end while
 
-	if (current_menu && current_menu->end_function)
-		current_menu->end_function();
+		// Get input.
+		ModifyFunction InputDispatch = ActiveMenu->InputDispatch;
+		if (InputDispatch == NULL) InputDispatch = DefaultInputDispatch;
+		InputDispatch(&ActiveMenu, &ActiveMenu->ActiveEntryIndex);
 
-	if(bg_screenp != NULL) free((void*)bg_screenp);
+		// Possibly finalise this menu and activate and initialise a new one.
+		while (ActiveMenu != PreviousMenu) {
+			if (PreviousMenu != NULL && PreviousMenu->End != NULL)
+				PreviousMenu->End(PreviousMenu);
 
-	DS2_FillScreen(DS_ENGINE_SUB, COLOR_BLACK);
-		DS2_UpdateScreen(DS_ENGINE_SUB);
+			SaveConfigsIfNeeded(&PreviousConfig);
+
+			// Keep moving down until a menu entry can be focused, if
+			// the first one can't be.
+			if (ActiveMenu != NULL && ActiveMenu->Entries[ActiveMenu->ActiveEntryIndex] != NULL) {
+				uint32_t Sentinel = ActiveMenu->ActiveEntryIndex;
+				EntryCanFocusFunction CanFocus = ActiveMenu->Entries[ActiveMenu->ActiveEntryIndex]->CanFocus;
+				if (CanFocus == NULL) CanFocus = DefaultCanFocus;
+				while (!CanFocus(ActiveMenu, ActiveMenu->Entries[ActiveMenu->ActiveEntryIndex], ActiveMenu->ActiveEntryIndex)) {
+					MoveDown(ActiveMenu, &ActiveMenu->ActiveEntryIndex);
+					if (ActiveMenu->ActiveEntryIndex == Sentinel) {
+						// If we went through all of them, we cannot focus anything.
+						// Place the focus on the NULL entry.
+						ActiveMenu->ActiveEntryIndex = FindNullEntry(ActiveMenu);
+						break;
+					}
+					CanFocus = ActiveMenu->Entries[ActiveMenu->ActiveEntryIndex]->CanFocus;
+					if (CanFocus == NULL) CanFocus = DefaultCanFocus;
+				}
+			}
+
+			PreviousMenu = ActiveMenu;
+			if (ActiveMenu != NULL && ActiveMenu->Init != NULL)
+				ActiveMenu->Init(&ActiveMenu);
+		}
+	}
+
+exit:
+	SaveConfigsIfNeeded(&PreviousConfig);
+
+	// Avoid leaving the menu with buttons pressed.
 	DS2_AwaitNoButtons();
+
+	// Clear the Sub Screen as its backlight is about to be turned off.
+	DS2_FillScreen(DS_ENGINE_SUB, COLOR_BLACK);
+	DS2_UpdateScreen(DS_ENGINE_SUB);
 
 	DS2_SetScreenBacklights(DS_SCREEN_UPPER);
 
 	DS2_HighClockSpeed();
 
-	return return_value;
+	return 0;
 }
 
 /*--------------------------------------------------------

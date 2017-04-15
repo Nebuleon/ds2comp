@@ -44,9 +44,9 @@ Loading...
 #MSG_FILE_MENU_SORTING_LIST
 Sorting...
 #FMT_OPTIONS_COMPRESSION_LEVEL
-Compression level            %d
+Compression level
 #FMT_OPTIONS_LANGUAGE
-Language                          %s
+Language
 #MSG_OPTIONS_CARD_CAPACITY
 Card capacity
 #MSG_OPTIONS_RESET
@@ -127,9 +127,9 @@ Laden...
 #MSG_FILE_MENU_SORTING_LIST
 Sorteren...
 #FMT_OPTIONS_COMPRESSION_LEVEL
-Compressieniveau            %d
+Compressieniveau
 #FMT_OPTIONS_LANGUAGE
-Taal                          %s
+Taal
 #MSG_OPTIONS_CARD_CAPACITY
 Kaartcapaciteit
 #MSG_OPTIONS_RESET
@@ -210,9 +210,9 @@ Chargement...
 #MSG_FILE_MENU_SORTING_LIST
 Tri...
 #FMT_OPTIONS_COMPRESSION_LEVEL
-Niveau de compression    %d
+Niveau de compression
 #FMT_OPTIONS_LANGUAGE
-Langue                              %s
+Langue
 #MSG_OPTIONS_CARD_CAPACITY
 Capacité de la carte
 #MSG_OPTIONS_RESET
@@ -293,9 +293,9 @@ Cargando...
 #MSG_FILE_MENU_SORTING_LIST
 Ordenando...
 #FMT_OPTIONS_COMPRESSION_LEVEL
-Nivel de compresión              %d
+Nivel de compresión
 #FMT_OPTIONS_LANGUAGE
-Idioma                                     %s
+Idioma
 #MSG_OPTIONS_CARD_CAPACITY
 Espacio libre
 #MSG_OPTIONS_RESET
@@ -376,9 +376,9 @@ Laden...
 #MSG_FILE_MENU_SORTING_LIST
 Sortieren...
 #FMT_OPTIONS_COMPRESSION_LEVEL
-Komprimierungslevel            %d
+Komprimierungslevel
 #FMT_OPTIONS_LANGUAGE
-Sprache                                 %s
+Sprache
 #MSG_OPTIONS_CARD_CAPACITY
 Speicherkapazität
 #MSG_OPTIONS_RESET
