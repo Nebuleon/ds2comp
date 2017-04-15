@@ -1629,13 +1629,13 @@ void ShowVersion()
 }
 
 static struct Entry Options_Language = {
-	ENTRY_OPTION(&msg[FMT_OPTIONS_LANGUAGE], &application_config.language, LANG_END),
+	ENTRY_OPTION(&msg[MSG_OPTIONS_LANGUAGE], &application_config.language, LANG_END),
 	.DisplayValue = DisplayLanguageValue,
 	.Action = PostChangeLanguage
 };
 
 static struct Entry Options_CompressionLevel = {
-	ENTRY_OPTION(&msg[FMT_OPTIONS_COMPRESSION_LEVEL], &application_config.CompressionLevel, 10),
+	ENTRY_OPTION(&msg[MSG_OPTIONS_COMPRESSION_LEVEL], &application_config.CompressionLevel, 10),
 	.DisplayValue = DisplayCompressionLevelValue
 };
 
