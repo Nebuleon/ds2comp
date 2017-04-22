@@ -36,6 +36,8 @@ CFLAGS      += -fno-builtin -ffunction-sections -O3                           \
 
 all: $(OUTPUT).plg
 
+$(OUTPUT).plg: $(OUTPUT).pak
+
 release: all
 	-rm -f $(OUTPUT).zip
 	zip -r $(OUTPUT).zip $(PLUGIN_DIR) $(OUTPUT).plg $(OUTPUT).bmp $(OUTPUT).ini copyright installation.txt README.md source.txt
@@ -43,7 +45,7 @@ release: all
 $(OUTPUT).elf: $(OBJECTS)
 
 clean:
-	-rm -rf $(OUTPUT).plg $(OUTPUT).dat $(OUTPUT).elf depend $(OBJECTS)
+	-rm -rf $(OUTPUT).plg $(OUTPUT).dat $(OUTPUT).pak $(OUTPUT).elf depend $(OBJECTS)
 
 Makefile: depend
 
