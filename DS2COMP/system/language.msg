@@ -91,10 +91,10 @@ Do you additionally wish to leave all existing files intact for this .zip archiv
 Compressing...
 #MSG_PROGRESS_DECOMPRESSING
 Decompressing...
-#MSG_PROGRESS_KIBIBYTE_COUNT
+#FMT_PROGRESS_KIBIBYTE_COUNT
 %d of %d KiB
-#MSG_PROGRESS_ARCHIVE_MEMBER_AND_KIBIBYTE_COUNT
-File %d of %d  -  %d of %d KiB
+#FMT_PROGRESS_ARCHIVE_MEMBER_COUNT
+File %d of %d
 #MSG_PROGRESS_CANCEL_WITH_B
 *B to cancel
 #MSG_ERROR_INPUT_FILE_READ
@@ -174,10 +174,10 @@ Voulez-vous aussi garder tous les fichiers existants pour cette archive .zip?
 Compression...
 #MSG_PROGRESS_DECOMPRESSING
 Décompression...
-#MSG_PROGRESS_KIBIBYTE_COUNT
+#FMT_PROGRESS_KIBIBYTE_COUNT
 %d de %d Kio
-#MSG_PROGRESS_ARCHIVE_MEMBER_AND_KIBIBYTE_COUNT
-Fichier %d de %d  -  %d de %d Kio
+#FMT_PROGRESS_ARCHIVE_MEMBER_COUNT
+Fichier %d de %d
 #MSG_PROGRESS_CANCEL_WITH_B
 *B pour annuler
 #MSG_ERROR_INPUT_FILE_READ
@@ -257,10 +257,10 @@ El fichero de destino ya existe. ¿Sobrescribirlo?
 Comprimiendo...
 #MSG_PROGRESS_DECOMPRESSING
 Decomprimiendo...
-#MSG_PROGRESS_KIBIBYTE_COUNT
+#FMT_PROGRESS_KIBIBYTE_COUNT
 %d de %d KiB
-#MSG_PROGRESS_ARCHIVE_MEMBER_AND_KIBIBYTE_COUNT
-Fichero %d de %d  -  %d de %d KiB
+#FMT_PROGRESS_ARCHIVE_MEMBER_COUNT
+Fichero %d de %d
 #MSG_PROGRESS_CANCEL_WITH_B
 *B para cancelar
 #MSG_ERROR_INPUT_FILE_READ
@@ -340,10 +340,10 @@ Zusätzlich alle bestehenden Dateien für dieses .zip Archiv beibehalten?
 Komprimiere...
 #MSG_PROGRESS_DECOMPRESSING
 Entpacke...
-#MSG_PROGRESS_KIBIBYTE_COUNT
+#FMT_PROGRESS_KIBIBYTE_COUNT
 %d von %d KiB
-#MSG_PROGRESS_ARCHIVE_MEMBER_AND_KIBIBYTE_COUNT
-Datei %d von %d  -  %d von %d KiB
+#FMT_PROGRESS_ARCHIVE_MEMBER_COUNT
+Datei %d von %d
 #MSG_PROGRESS_CANCEL_WITH_B
 *B Abbrechen
 #MSG_ERROR_INPUT_FILE_READ
@@ -423,10 +423,10 @@ Wilt U alle bestaande bestanden voor dit .zip archief in tact laten?
 Aan het comprimeren...
 #MSG_PROGRESS_DECOMPRESSING
 Aan het uitpakken...
-#MSG_PROGRESS_KIBIBYTE_COUNT
+#FMT_PROGRESS_KIBIBYTE_COUNT
 %d van %d KiB
-#MSG_PROGRESS_ARCHIVE_MEMBER_AND_KIBIBYTE_COUNT
-Bestand %d uit %d  -  %d van %d KiB
+#FMT_PROGRESS_ARCHIVE_MEMBER_COUNT
+Bestand %d uit %d
 #MSG_PROGRESS_CANCEL_WITH_B
 *B Annuleren
 #MSG_ERROR_INPUT_FILE_READ

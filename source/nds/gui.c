@@ -191,8 +191,9 @@ gui_action_type get_gui_input(void)
 	}
 }
 
-static char ProgressAction[64];
+static const char* ProgressAction;
 static char ProgressFilename[PATH_MAX + 1];
+static uint8_t BorderUpdateCount;
 static unsigned int ProgressCurrentFile; // 1-based
 static unsigned int ProgressTotalFiles;
 static unsigned int ProgressTotalSize;
@@ -201,19 +202,21 @@ static clock_t LastProgressUpdateTime;
 
 void InitProgress(const char *Action, const char *Filename, unsigned int TotalSize)
 {
-	strcpy(ProgressAction, Action);
+	ProgressAction = Action;
 	strcpy(ProgressFilename, Filename);
 	ProgressTotalSize = TotalSize;
 	LastProgressUpdateTime = 0;
+	BorderUpdateCount = 3;
 
 	UpdateProgress(0);
 }
 
 void InitProgressMultiFile(const char *Action, const char *Filename, unsigned int TotalFiles)
 {
-	strcpy(ProgressAction, Action);
+	ProgressAction = Action;
 	strcpy(ProgressFilename, Filename);
 	ProgressTotalFiles = TotalFiles;
+	BorderUpdateCount = 3;
 }
 
 void UpdateProgressChangeFile(unsigned int CurrentFile, const char *Filename, unsigned int TotalSize)
@@ -222,40 +225,121 @@ void UpdateProgressChangeFile(unsigned int CurrentFile, const char *Filename, un
 	strcpy(ProgressFilename, Filename);
 	ProgressTotalSize = TotalSize;
 	LastProgressUpdateTime = 0; // force an update when changing files
-	// if this is too slow, move it to InitProgressMultiFile above
 
 	UpdateProgressMultiFile(0);
 }
 
 #define PROGRESS_BAR_WIDTH (ICON_PROGRESS.x)
 
+static bool draw_border(void)
+{
+	if (BorderUpdateCount > 0) {
+		DS2_FillScreen(DS_ENGINE_MAIN, COLOR_BLACK);
+		draw_string_vcenter(DS2_GetMainScreen(), 1, 48, 254, COLOR_WHITE, ProgressAction);
+		draw_string_vcenter(DS2_GetMainScreen(), 1, 130, 254, COLOR_WHITE, msg[MSG_PROGRESS_CANCEL_WITH_B]);
+		BorderUpdateCount--;
+		return true;
+	} else {
+		memset(DS2_GetMainScreen() + (64 * DS_SCREEN_WIDTH), 0,
+			(130 - 64) * DS_SCREEN_WIDTH * sizeof(uint16_t));
+		return false;
+	}
+}
+
+static void draw_progress_bar(void)
+{
+	uint32_t PixelsDone = (uint32_t) (((uint64_t) ProgressDoneSize * (uint64_t) PROGRESS_BAR_WIDTH) / (uint64_t) ProgressTotalSize);
+
+	show_icon(DS2_GetMainScreen(), &ICON_NPROGRESS, (DS_SCREEN_WIDTH - PROGRESS_BAR_WIDTH) / 2, 80);
+	show_partial_icon_horizontal(DS2_GetMainScreen(), &ICON_PROGRESS, (DS_SCREEN_WIDTH - PROGRESS_BAR_WIDTH) / 2, 80, PixelsDone);
+}
+
+#define DIGIT_WIDTH 6
+
+static void draw_byte_count(void)
+{
+	size_t i, len;
+	uint32_t width = 0;
+	char line[128];
+	uint16_t* pixel;
+	sprintf(line, msg[FMT_PROGRESS_KIBIBYTE_COUNT], ProgressDoneSize / 1024, ProgressTotalSize / 1024);
+
+	len = strlen(line);
+	for (i = 0; i < len; i++) {
+		/* Force all digits to be fixed-width to prevent the width of the text
+		 * from jumping around while (de)compressing. */
+		width += (line[i] >= '0' && line[i] <= '9') ? DIGIT_WIDTH : BDF_WidthUCS2(line[i]);
+	}
+
+	/* Right-align the result starting at scanline 114, hugging the right edge
+	 * of the screen. */
+	pixel = DS2_GetMainScreen() + (114 * DS_SCREEN_WIDTH) + (DS_SCREEN_WIDTH - width);
+	for (i = 0; i < len; i++) {
+		if (line[i] >= '0' && line[i] <= '9') {
+			/* Center the digit within DIGIT_WIDTH pixels. */
+			BDF_RenderUCS2(pixel + (DIGIT_WIDTH - BDF_WidthUCS2(line[i])) / 2,
+				DS_SCREEN_WIDTH, COLOR_TRANS, COLOR_WHITE, line[i]);
+			pixel += DIGIT_WIDTH;
+		} else {
+			pixel += BDF_RenderUCS2(pixel,
+				DS_SCREEN_WIDTH, COLOR_TRANS, COLOR_WHITE, line[i]);
+		}
+	}
+}
+
+static void draw_file_count(void)
+{
+	size_t i, len;
+	uint32_t width = 0;
+	char line[128];
+	uint16_t* pixel;
+	sprintf(line, msg[FMT_PROGRESS_ARCHIVE_MEMBER_COUNT], ProgressCurrentFile, ProgressTotalFiles);
+
+	len = strlen(line);
+	for (i = 0; i < len; i++) {
+		/* Force all digits to be fixed-width to prevent the width of the text
+		 * from jumping around while (de)compressing. */
+		width += (line[i] >= '0' && line[i] <= '9') ? DIGIT_WIDTH : BDF_WidthUCS2(line[i]);
+	}
+
+	/* Right-align the result starting at scanline 114, hugging the middle of
+	 * the screen. */
+	pixel = DS2_GetMainScreen() + (114 * DS_SCREEN_WIDTH) + (DS_SCREEN_WIDTH / 2 - width);
+	for (i = 0; i < len; i++) {
+		if (line[i] >= '0' && line[i] <= '9') {
+			/* Center the digit within DIGIT_WIDTH pixels. */
+			BDF_RenderUCS2(pixel + (DIGIT_WIDTH - BDF_WidthUCS2(line[i])) / 2,
+				DS_SCREEN_WIDTH, COLOR_TRANS, COLOR_WHITE, line[i]);
+			pixel += DIGIT_WIDTH;
+		} else {
+			pixel += BDF_RenderUCS2(pixel,
+				DS_SCREEN_WIDTH, COLOR_TRANS, COLOR_WHITE, line[i]);
+		}
+	}
+}
+
+static void flip_screen(bool border)
+{
+	if (border) {
+		DS2_FlipMainScreen();
+	} else {
+		DS2_FlipMainScreenPart(64, 130);
+	}
+}
+
 void UpdateProgress(unsigned int DoneSize)
 {
 	ProgressDoneSize = DoneSize;
 
 	clock_t Now = clock();
-	if (Now - LastProgressUpdateTime >= CLOCKS_PER_SEC / 4 /* 250 milliseconds */
+	if (Now - LastProgressUpdateTime >= CLOCKS_PER_SEC / 20 /* 50 milliseconds */
 	 || ProgressDoneSize == ProgressTotalSize /* force update if done */) {
 		LastProgressUpdateTime = Now;
-		// If you want to add skinning support for the upper screen, edit this.
-		DS2_FillScreen(DS_ENGINE_MAIN, COLOR_BLACK);
-
-		draw_string_vcenter(DS2_GetMainScreen(), 1, 48, 254, COLOR_WHITE, ProgressAction);
-
+		bool border = draw_border();
 		draw_string_vcenter(DS2_GetMainScreen(), 1, 64, 254, COLOR_WHITE, ProgressFilename);
-
-		char ByteCountLine[128];
-		sprintf(ByteCountLine, msg[FMT_PROGRESS_KIBIBYTE_COUNT], ProgressDoneSize / 1024, ProgressTotalSize / 1024);
-		draw_string_vcenter(DS2_GetMainScreen(), 1, 114, 254, COLOR_WHITE, ByteCountLine);
-
-		draw_string_vcenter(DS2_GetMainScreen(), 1, 130, 254, COLOR_WHITE, msg[MSG_PROGRESS_CANCEL_WITH_B]);
-
-		unsigned int PixelsDone = (unsigned int) (((unsigned long long) ProgressDoneSize * (unsigned long long) PROGRESS_BAR_WIDTH) / (unsigned long long) ProgressTotalSize);
-
-		show_icon(DS2_GetMainScreen(), &ICON_NPROGRESS, (DS_SCREEN_WIDTH - PROGRESS_BAR_WIDTH) / 2, 80);
-		show_partial_icon_horizontal(DS2_GetMainScreen(), &ICON_PROGRESS, (DS_SCREEN_WIDTH - PROGRESS_BAR_WIDTH) / 2, 80, PixelsDone);
-
-		DS2_FlipMainScreen();
+		draw_byte_count();
+		draw_progress_bar();
+		flip_screen(border);
 	}
 }
 
@@ -264,29 +348,16 @@ void UpdateProgressMultiFile(unsigned int DoneSize)
 	ProgressDoneSize = DoneSize;
 
 	clock_t Now = clock();
-	if (Now - LastProgressUpdateTime >= CLOCKS_PER_SEC / 4 /* 250 milliseconds */
+	if (Now - LastProgressUpdateTime >= CLOCKS_PER_SEC / 20 /* 50 milliseconds */
 	 || ((ProgressDoneSize == ProgressTotalSize)
 	  && (ProgressCurrentFile == ProgressTotalFiles)) /* force update if done */) {
 		LastProgressUpdateTime = Now;
-		// If you want to add skinning support for the upper screen, edit this.
-		DS2_FillScreen(DS_ENGINE_MAIN, COLOR_BLACK);
-
-		draw_string_vcenter(DS2_GetMainScreen(), 1, 48, 254, COLOR_WHITE, ProgressAction);
-
+		bool border = draw_border();
 		draw_string_vcenter(DS2_GetMainScreen(), 1, 64, 254, COLOR_WHITE, ProgressFilename);
-
-		char ByteCountLine[128];
-		sprintf(ByteCountLine, msg[FMT_PROGRESS_ARCHIVE_MEMBER_AND_KIBIBYTE_COUNT], ProgressCurrentFile, ProgressTotalFiles, ProgressDoneSize / 1024, ProgressTotalSize / 1024);
-		draw_string_vcenter(DS2_GetMainScreen(), 1, 114, 254, COLOR_WHITE, ByteCountLine);
-
-		draw_string_vcenter(DS2_GetMainScreen(), 1, 130, 254, COLOR_WHITE, msg[MSG_PROGRESS_CANCEL_WITH_B]);
-
-		unsigned int PixelsDone = (unsigned int) (((unsigned long long) ProgressDoneSize * (unsigned long long) PROGRESS_BAR_WIDTH) / (unsigned long long) ProgressTotalSize);
-
-		show_icon(DS2_GetMainScreen(), &ICON_NPROGRESS, (DS_SCREEN_WIDTH - PROGRESS_BAR_WIDTH) / 2, 80);
-		show_partial_icon_horizontal(DS2_GetMainScreen(), &ICON_PROGRESS, (DS_SCREEN_WIDTH - PROGRESS_BAR_WIDTH) / 2, 80, PixelsDone);
-
-		DS2_FlipMainScreen();
+		draw_file_count();
+		draw_byte_count();
+		draw_progress_bar();
+		flip_screen(border);
 	}
 }
 
